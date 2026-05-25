@@ -32,8 +32,13 @@ def _prefer_console_version(path: str) -> str:
     """
     if not path or not path.lower().endswith(".exe"):
         return path
-    base = path[:-4]
-    console_path = base + "_console.exe"
+    if os.path.isdir(path):
+        b = os.path.basename(path)
+        base = b[:-4] if b.lower().endswith(".exe") else b
+        console_path = os.path.join(path, base + "_console.exe")
+    else:
+        base = path[:-4]
+        console_path = base + "_console.exe"
     if os.path.exists(console_path):
         return console_path
     return path
@@ -61,7 +66,7 @@ def get_godot_executable() -> str:
                 return _prefer_console_version(candidate)
 
     # Default fallback - console variant preferred if _console.exe sibling exists in same folder
-    default_path = r"I:\Godot_v4.6.3-stable_win64_console.exe"
+    default_path = r"I:\\Godot_v4.6.3-stable_win64_console.exe"
     if os.path.exists(default_path):
         return _prefer_console_version(default_path)
 
