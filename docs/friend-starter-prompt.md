@@ -1,0 +1,79 @@
+# Friend Handoff Starter Prompt
+
+**Purpose**:  
+Give this to a complete beginner (your friend) so they can paste it into a **brand new Grok chat** (with the godot-mcp MCP enabled) and start building a game with strong guidance, using the zero-footprint workflow.
+
+---
+
+## Instructions for Your Friend
+
+1. Make sure you have the Godot MCP tools set up in your Grok environment (follow the instructions from the person who gave you this, or the getting-started guide).
+2. Open a **completely new** chat with Grok.
+3. Copy everything below the line and paste it as your first message.
+4. Replace the project path with the one you're using.
+5. Follow along step by step.
+
+---
+
+## Copy Everything Below This Line
+
+```
+Hi! I'm a complete beginner who has never made a game before and has almost no coding experience. I want to learn by actually building a small 2D platformer game with your help.
+
+I have a clean Godot 4 project ready at this path:
+~/MyCleanGodotTestProject
+
+We are using a special "zero-footprint" Godot MCP setup. This means you can temporarily connect to my running Godot project to look at it, take screenshots, run code live inside the game, simulate button presses, create and modify nodes, etc. — without permanently installing anything into my project.
+
+### Important Rules for Working With Me
+
+- Please treat me like someone who knows almost nothing. Explain every concept simply the first time you use it.
+- Give me **one very small task at a time**. After I do it, I'll tell you what happened (or send you a screenshot).
+- You have powerful tools available through the Godot MCP. Use them a lot:
+  - Take screenshots of the game so you can actually "see" what's happening.
+  - Use live script execution to test small pieces of code quickly.
+  - Use input simulation when we want to test player controls.
+  - Inspect the scene tree, properties, and UI whenever you're unsure about the current state.
+- Always work in this clean test project (never my "real" projects until we're confident).
+- When you want to connect to my running game, tell me exactly what to do (usually: run the inject tool if needed, then open the project in Godot and press Play).
+- When we're done experimenting for the day, remind me to clean up the temporary bridge so my project stays clean.
+
+### Our First Project
+
+Let's make a simple 2D platformer:
+- A character that can run left and right
+- The character can jump
+- Basic gravity and floor collision
+- At least one platform to stand on
+- Collectible coins that disappear when touched
+- A simple goal or win condition
+
+Start by checking the current state of my project (use your tools to look at the scene). Then give me the very first tiny step.
+
+Let's begin!
+```
+
+---
+
+## Tips for the Person Giving This to Their Friend
+
+- Update the project path in the prompt to whatever clean project you're giving them.
+- Consider starting with an even simpler game first (e.g. a top-down collector or Flappy Bird style) if the friend has zero experience.
+- After they paste it, stay available for the first 10–15 minutes in case they get confused about the setup.
+- The quality of the experience depends heavily on how well the zero-footprint bridge + tool descriptions work for a fresh agent. This is why we did all the previous work on making the bridge rich.
+
+---
+
+## Optional: Even More Guided Version
+
+If your friend is extremely non-technical, you can add this paragraph right after the "Let's begin!" line:
+
+```
+If at any point I say I'm confused or don't understand something, please slow down, explain the concept in the simplest possible terms, and give me even smaller steps.
+```
+
+You can also pre-inject the bridge for them the first time and just tell them "the connection is already active, just open the project and press Play."
+
+---
+
+This prompt + the getting-started guide should give a non-technical person a fighting chance at having a productive session with a fresh Grok instance.

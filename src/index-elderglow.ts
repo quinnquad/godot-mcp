@@ -1,5 +1,6 @@
-// Godot MCP Server - General public surface (zero-footprint + general Godot tools)
-// Private game-specific tools are excluded from this public MVP package (per hard constraint during packaging).
+// Godot MCP Server - Full Elderglow variant (private / internal use only)
+// This includes the public general tools + zero-footprint + all Elderglow-specific domain tools.
+// For the public release, use src/index.ts (which excludes all Elderglow-specific code per hard constraint).
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
@@ -7,12 +8,16 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 // Public / General tools
 import { generalTools } from './tools/general/tools';
 
+// Elderglow-specific (PRIVATE - only for Elderglow users / private repo)
+import { elderglowTools } from './tools/elderglow/tools';
+import { handleElderglowTool, elderglowToolNames } from './tools/elderglow/handlers';
+
 // General bridge infrastructure (zero-footprint on-demand injection - public / reusable)
 import { zeroFootprintToolNames, handleZeroFootprintTool, getActiveZeroFootprintPort } from './bridge/zero-footprint';
 
 const server = new Server(
   {
-    name: 'godot-mcp',
+    name: 'godot-mcp-elderglow',
     version: '0.1.0',
   },
   {
@@ -28,13 +33,14 @@ const path = require('path');
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     ...generalTools,
+    ...elderglowTools,
   ]
 }));
 
 // Note: For stdio MCP usage (Grok Build TUI, Claude Desktop, etc.), we avoid
 // printing to stdout because it interferes with the JSON-RPC protocol.
 // Use stderr for startup messages.
-console.error('Godot MCP server initialized (stdio mode) - general public surface');
+console.error('Godot MCP server initialized (stdio mode) - FULL Elderglow variant (private/internal)');
 
 // Minimal TCP client helper for Phase 2b runtime.
 // Supports both the persistent runtime (default 4242) and zero-footprint injected bridges (e.g. 4243).
@@ -241,6 +247,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === 'create_simple_player') {
     const resp = await sendRuntimeCmd({ cmd: 'create_simple_player', ...args }, targetPort);
     return { content: [{ type: 'text', text: JSON.stringify(resp) }] };
+  }
+
+  // Delegate all Elderglow-specific tools (private domain) to the dedicated handler
+  // These forward to the runtime (usually 4242 in Elderglow projects, or 4243 via zf).
+  if (elderglowToolNames.includes(name)) {
+    return handleElderglowTool(name, args, (cmd: any) => sendRuntimeCmd(cmd, targetPort));
   }
 
   // Delegate zero-footprint (general / public on-demand bridge injection) to its dedicated module

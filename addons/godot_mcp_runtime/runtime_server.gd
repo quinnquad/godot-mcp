@@ -1,0 +1,611 @@
+# runtime_server.gd
+# Minimal real implementation of the Godot MCP Runtime Autoload (Phase 2)
+# Recommended: Install via the Godot plugin system (see README "Live Runtime Control").
+# The accompanying plugin.gd + plugin.cfg provide true one-click enable.
+
+extends Node
+
+var tcp_server := TCPServer.new()
+var peers: Array[StreamPeerTCP] = []
+var peer_buffers := {}  # per-peer receive buffer for TCP robustness (fix fragmentation)
+const PORT := 4242
+
+func _ready() -> void:
+	var err := tcp_server.listen(PORT, "127.0.0.1")
+	if err != OK:
+		push_error("[GodotMCPRuntime] Failed to listen on port %d" % PORT)
+	else:
+		print("[GodotMCPRuntime] Listening on 127.0.0.1:%d for live runtime control" % PORT)
+
+func _process(_delta: float) -> void:
+	if tcp_server.is_connection_available():
+		var peer := tcp_server.take_connection()
+		peers.append(peer)
+	
+	for i in range(peers.size() - 1, -1, -1):
+		var p: StreamPeerTCP = peers[i]
+		if p.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+			peer_buffers.erase(p)
+			peers.remove_at(i)
+			continue
+		var bytes := p.get_available_bytes()
+		if bytes > 0:
+			var data := p.get_string(bytes)
+			if not peer_buffers.has(p):
+				peer_buffers[p] = ""
+			peer_buffers[p] += data
+			var buf: String = peer_buffers[p]
+			var lines := buf.split("\n", true)
+			peer_buffers[p] = lines[lines.size()-1]  # keep partial last
+			for j in range(lines.size()-1):
+				var line := lines[j].strip_edges()
+				if line == "":
+					continue
+				var json := JSON.new()
+				var parse_result := json.parse(line)
+				if parse_result == OK and json.data is Dictionary:
+					var resp := _handle_cmd(json.data)
+					p.put_string(JSON.stringify(resp) + "\n")
+				else:
+					p.put_string(JSON.stringify({"status": "error", "message": "invalid json"}) + "\n")
+
+func _handle_cmd(cmd: Dictionary) -> Dictionary:
+	var c := str(cmd.get("cmd", ""))
+	match c:
+		"get_tree":
+			var root_path := str(cmd.get("root", "/root"))
+			var root := get_tree().get_root().get_node_or_null(root_path)
+			if root:
+				return {"status": "ok", "data": _dump_tree(root)}
+			return {"status": "error", "message": "root not found"}
+		"set_property":
+			var node_path := str(cmd.get("node_path", ""))
+			var prop := str(cmd.get("property", ""))
+			var value = cmd.get("value")
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node and prop != "":
+				node.set(prop, _variant_from_json(value))
+				return {"status": "ok"}
+			return {"status": "error", "message": "node or property not found"}
+		"call_method":
+			var node_path := str(cmd.get("node_path", ""))
+			var method := str(cmd.get("method", ""))
+			var args := cmd.get("args", [])
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node and node.has_method(method):
+				var result = node.callv(method, args)
+				return {"status": "ok", "result": _json_from_variant(result)}
+			return {"status": "error", "message": "node or method not found"}
+		"get_property":
+			var node_path := str(cmd.get("node_path", ""))
+			var prop := str(cmd.get("property", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node and prop != "":
+				return {"status": "ok", "value": _json_from_variant(node.get(prop))}
+			return {"status": "error", "message": "node or property not found"}
+		"list_children":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				var children := []
+				for child in node.get_children():
+					children.append({"name": child.name, "path": child.get_path(), "type": child.get_class()})
+				return {"status": "ok", "children": children}
+			return {"status": "error", "message": "node not found"}
+		"get_node":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				return {"status": "ok", "data": {"name": node.name, "path": node.get_path(), "type": node.get_class(), "script": node.get_script() != null}}
+			return {"status": "error", "message": "node not found"}
+		"find_node_by_name":
+			var root_path := str(cmd.get("root_path", "/root"))
+			var target_name := str(cmd.get("name", ""))
+			var root := get_tree().get_root().get_node_or_null(root_path)
+			if root and target_name != "":
+				var found := _find_node_by_name_recursive(root, target_name)
+				if found:
+					return {"status": "ok", "path": found.get_path(), "type": found.get_class()}
+			return {"status": "error", "message": "not found"}
+		"get_autoloads":
+			# Basic: return known singletons if possible (limited in runtime)
+			return {"status": "ok", "autoloads": ["GodotMCPRuntime (self)"]}
+		"instantiate_scene":
+			var scene_path := str(cmd.get("scene_path", ""))
+			var parent_path := str(cmd.get("parent_path", ""))
+			var inst_name := str(cmd.get("name", ""))
+			var parent := get_tree().get_root().get_node_or_null(parent_path)
+			if parent == null or scene_path == "":
+				return {"status": "error", "message": "parent or scene_path invalid"}
+			var packed = load(scene_path)
+			if packed == null or not packed is PackedScene:
+				return {"status": "error", "message": "failed to load PackedScene"}
+			var instance = packed.instantiate()
+			if inst_name != "":
+				instance.name = inst_name
+			parent.add_child(instance)
+			return {"status": "ok", "path": instance.get_path()}
+		"add_child":
+			var parent_path := str(cmd.get("parent_path", ""))
+			var child_path := str(cmd.get("child_path", ""))
+			var parent := get_tree().get_root().get_node_or_null(parent_path)
+			var child := get_tree().get_root().get_node_or_null(child_path)
+			if parent and child:
+				if child.get_parent():
+					child.get_parent().remove_child(child)
+				parent.add_child(child)
+				return {"status": "ok"}
+			return {"status": "error", "message": "parent or child not found"}
+		"remove_node":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				if node.get_parent():
+					node.get_parent().remove_child(node)
+				node.queue_free()
+				return {"status": "ok"}
+			return {"status": "error", "message": "node not found"}
+		"get_signals":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				var sigs = []
+				# Real signal list via script or ClassDB (Godot 4 limited instance signals; extend as needed)
+				if node.get_script():
+					for s in node.get_script().get_script_signal_list(): sigs.append(s.name)
+				return {"status": "ok", "signals": sigs}
+			return {"status": "error", "message": "node not found"}
+		"emit_signal":
+			var node_path := str(cmd.get("node_path", ""))
+			var signal_name := str(cmd.get("signal", ""))
+			var args := cmd.get("args", [])
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				node.emit_signalv(signal_name, args)
+				return {"status": "ok"}
+			return {"status": "error", "message": "node not found"}
+		"get_animation_list":
+			var player_path := str(cmd.get("player_path", ""))
+			var player := get_tree().get_root().get_node_or_null(player_path)
+			if player and player is AnimationPlayer:
+				return {"status": "ok", "animations": player.get_animation_list()}
+			return {"status": "error", "message": "AnimationPlayer not found"}
+		"connect_signal":
+			var emitter_path := str(cmd.get("emitter_path", ""))
+			var signal_name := str(cmd.get("signal", ""))
+			var target_path := str(cmd.get("target_path", ""))
+			var method := str(cmd.get("method", ""))
+			var emitter := get_tree().get_root().get_node_or_null(emitter_path)
+			var target := get_tree().get_root().get_node_or_null(target_path)
+			if emitter and target:
+				emitter.connect(signal_name, Callable(target, method))
+				return {"status": "ok"}
+			return {"status": "error", "message": "emitter or target not found"}
+		"set_control_text":
+			var node_path := str(cmd.get("node_path", ""))
+			var text := str(cmd.get("text", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				if node.has_method("set_text"):
+					node.set_text(text)
+				else:
+					node.text = text
+				return {"status": "ok"}
+			return {"status": "error", "message": "node not found"}
+		"play_animation":
+			var player_path := str(cmd.get("player_path", ""))
+			var anim_name := str(cmd.get("anim_name", ""))
+			var player := get_tree().get_root().get_node_or_null(player_path)
+			if player and player is AnimationPlayer:
+				player.play(anim_name)
+				return {"status": "ok"}
+			return {"status": "error", "message": "AnimationPlayer not found"}
+		"raycast_2d":
+			var from := cmd.get("from", [0,0])
+			var to := cmd.get("to", [0,0])
+			var mask := cmd.get("collision_mask", 1)
+			var space = get_viewport().get_world_2d().get_direct_space_state()
+			var query = PhysicsRayQueryParameters2D.create(Vector2(from[0], from[1]), Vector2(to[0], to[1]), mask)
+			var hit = space.intersect_ray(query)
+			return {"status": "ok", "hit": hit.has("position"), "result": hit}
+		"pause_game":
+			var action := str(cmd.get("action", "toggle"))
+			if action == "pause" or action == "toggle":
+				get_tree().paused = true
+			elif action == "unpause":
+				get_tree().paused = false
+			return {"status": "ok", "paused": get_tree().paused}
+		"load_resource":
+			var res_path := str(cmd.get("resource_path", ""))
+			if res_path == "":
+				return {"status": "error", "message": "resource_path required"}
+			var res = load(res_path)
+			if res:
+				return {"status": "ok", "loaded": true, "type": res.get_class()}
+			return {"status": "error", "message": "failed to load"}
+		"get_node_properties":
+			var node_path := str(cmd.get("node_path", ""))
+			var props := cmd.get("properties", [])
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				var result = {}
+				var to_get = props
+				if to_get.size() == 0:
+					for p in node.get_property_list(): to_get.append(p.name)
+				for p in to_get: result[p] = _json_from_variant(node.get(p))
+				return {"status": "ok", "properties": result}
+			return {"status": "error", "message": "node not found"}
+		"get_ui_tree":
+			var root_path := str(cmd.get("root_path", "/root"))
+			var root := get_tree().get_root().get_node_or_null(root_path)
+			if root:
+				return {"status": "ok", "data": _dump_tree(root)}
+			return {"status": "error", "message": "root not found"}
+		"save_scene":
+			var node_path := str(cmd.get("node_path", ""))
+			var scene_path := str(cmd.get("scene_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node and scene_path != "":
+				var packed = PackedScene.new()
+				packed.pack(node)
+				ResourceSaver.save(packed, scene_path)
+				return {"status": "ok", "saved": scene_path}
+			return {"status": "error", "message": "node or path invalid"}
+		"reparent_node":
+			var node_path := str(cmd.get("node_path", ""))
+			var new_parent_path := str(cmd.get("new_parent_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			var new_parent := get_tree().get_root().get_node_or_null(new_parent_path)
+			if node and new_parent:
+				if node.get_parent(): node.get_parent().remove_child(node)
+				new_parent.add_child(node)
+				return {"status": "ok"}
+			return {"status": "error", "message": "node or parent not found"}
+		"duplicate_node":
+			var node_path := str(cmd.get("node_path", ""))
+			var new_name := str(cmd.get("new_name", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				var dup = node.duplicate()
+				if new_name: dup.name = new_name
+				if node.get_parent(): node.get_parent().add_child(dup)
+				return {"status": "ok", "path": dup.get_path()}
+			return {"status": "error", "message": "node not found"}
+		"get_all_properties":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				var props = {}
+				for p in node.get_property_list():
+					var n = p.name
+					props[n] = _json_from_variant(node.get(n))
+				return {"status": "ok", "properties": props}
+			return {"status": "error", "message": "node not found"}
+		"load_scene":
+			var scene_path := str(cmd.get("scene_path", ""))
+			if scene_path == "": return {"status": "error", "message": "scene_path required"}
+			var s = load(scene_path)
+			if s: return {"status": "ok", "loaded": true, "type": s.get_class()}
+			return {"status": "error", "message": "failed to load scene"}
+		"debug_print":
+			var msg := str(cmd.get("message", ""))
+			var lvl := str(cmd.get("level", "info"))
+			if lvl == "error":
+				push_error(msg)
+			else:
+				print(msg)
+			return {"status": "ok"}
+		"get_node_signals":
+			var node_path := str(cmd.get("node_path", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node: return {"status": "ok", "signals": node.get_signal_list()}
+			return {"status": "error", "message": "node not found"}
+		"ui_set_text":
+			var node_path := str(cmd.get("node_path", ""))
+			var text := str(cmd.get("text", ""))
+			var node := get_tree().get_root().get_node_or_null(node_path)
+			if node:
+				if node.has_method("set_text"):
+					node.set_text(text)
+				else:
+					node.text = text
+				return {"status": "ok"}
+			return {"status": "error", "message": "node not found"}
+		"capture_screenshot":
+			var img = get_viewport().get_texture().get_image()
+			if img == null:
+				return {"status": "error", "message": "viewport capture failed"}
+			var path := "user://mcp_screenshot.png"
+			img.save_png(path)
+			return {"status": "ok", "path": path, "width": img.get_width(), "height": img.get_height()}
+		"simulate_input_batch":
+			var steps := cmd.get("steps", [])
+			for s in steps:
+				var typ := str(s.get("type", ""))
+				if typ == "action":
+					var act := str(s.get("action", ""))
+					var press := bool(s.get("press", true))
+					if press: Input.action_press(act)
+					else: Input.action_release(act)
+				elif typ == "delay":
+					OS.delay_msec(int(s.get("ms", 10)))
+				elif typ == "mouse_move":
+					var p := s.get("pos", [0,0])
+					Input.warp_mouse(Vector2(p[0], p[1]))
+			return {"status": "ok", "processed": steps.size()}
+		# === Input Map (for creating controllable characters) ===
+		"list_input_actions":
+			var actions := []
+			for action in InputMap.get_actions():
+				var events := []
+				for ev in InputMap.action_get_events(action):
+					if ev is InputEventKey:
+						events.append({"type": "key", "keycode": OS.get_keycode_string(ev.keycode)})
+					elif ev is InputEventMouseButton:
+						events.append({"type": "mouse", "button": ev.button_index})
+					else:
+						events.append({"type": "other"})
+				actions.append({"name": action, "events": events})
+			return {"status": "ok", "actions": actions}
+
+		"add_input_action":
+			var action_name := str(cmd.get("name", ""))
+			if action_name == "":
+				return {"status": "error", "message": "name required"}
+			if InputMap.has_action(action_name):
+				return {"status": "ok", "message": "action already exists"}
+			var deadzone := float(cmd.get("deadzone", 0.2))
+			InputMap.add_action(action_name, deadzone)
+			var events := cmd.get("events", [])
+			for ev_data in events:
+				var ev
+				if typeof(ev_data) == TYPE_STRING:
+					# Simple string like "KEY_A" or "KEY_SPACE"
+					ev = InputEventKey.new()
+					ev.keycode = OS.find_keycode_from_string(ev_data)
+				elif ev_data is Dictionary:
+					if ev_data.get("type") == "key":
+						ev = InputEventKey.new()
+						ev.keycode = OS.find_keycode_from_string(str(ev_data.get("keycode", "KEY_A")))
+					elif ev_data.get("type") == "mouse":
+						ev = InputEventMouseButton.new()
+						ev.button_index = int(ev_data.get("button", 1))
+				if ev:
+					InputMap.action_add_event(action_name, ev)
+			return {"status": "ok", "message": "action added"}
+
+		"remove_input_action":
+			var action_name := str(cmd.get("name", ""))
+			if action_name == "":
+				return {"status": "error", "message": "name required"}
+			if not InputMap.has_action(action_name):
+				return {"status": "ok", "message": "action did not exist"}
+			InputMap.erase_action(action_name)
+			return {"status": "ok", "message": "action removed"}
+
+		"has_input_action":
+			var action_name := str(cmd.get("name", ""))
+			if action_name == "":
+				return {"status": "error", "message": "name required"}
+			return {"status": "ok", "exists": InputMap.has_action(action_name)}
+
+		"create_simple_player":
+			var parent_path := str(cmd.get("parent_path", "/root"))
+			var player_name := str(cmd.get("name", "Player"))
+			var movement_type := str(cmd.get("movement_type", "platformer"))  # "platformer" or "topdown"
+			var speed := float(cmd.get("speed", 300.0))
+			var jump_velocity := float(cmd.get("jump_velocity", -420.0))
+			var left_action := str(cmd.get("left_action", "ui_left"))
+			var right_action := str(cmd.get("right_action", "ui_right"))
+			var jump_action := str(cmd.get("jump_action", "ui_accept"))
+			var texture_path := str(cmd.get("texture_path", ""))  # optional Sprite2D texture
+
+			var parent := get_tree().get_root().get_node_or_null(parent_path)
+			if parent == null:
+				return {"status": "error", "message": "parent not found"}
+
+			# Create the player body
+			var player = CharacterBody2D.new()
+			player.name = player_name
+
+			# Collision shape
+			var collision = CollisionShape2D.new()
+			var shape = RectangleShape2D.new()
+			shape.size = Vector2(28, 52)
+			collision.shape = shape
+			collision.position = Vector2(0, 6)  # slight offset so feet are at origin
+			player.add_child(collision)
+
+			# Visual
+			if texture_path != "" and ResourceLoader.exists(texture_path):
+				var sprite = Sprite2D.new()
+				sprite.name = "Sprite"
+				sprite.texture = load(texture_path)
+				player.add_child(sprite)
+			else:
+				# Fallback placeholder
+				var visual = ColorRect.new()
+				visual.name = "Visual"
+				visual.color = Color(0.3, 0.7, 0.95)
+				visual.size = Vector2(28, 52)
+				visual.position = Vector2(-14, -26)
+				player.add_child(visual)
+
+			# Generate a much better movement script
+			var script = GDScript.new()
+			var script_code := ""
+
+			if movement_type == "topdown":
+				script_code = """
+extends CharacterBody2D
+
+@export var speed: float = %.1f
+@export var acceleration: float = 1200.0
+@export var friction: float = 900.0
+
+func _physics_process(delta: float) -> void:
+	var input_dir := Input.get_vector("%s", "%s", "ui_up", "ui_down")
+	var target_velocity := input_dir * speed
+
+	# Smooth acceleration / friction
+	if input_dir != Vector2.ZERO:
+		velocity = velocity.move_toward(target_velocity, acceleration * delta)
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+
+	move_and_slide()
+""" % [speed, left_action, right_action]
+
+			else:
+				# Platformer with coyote time + jump cut
+				script_code = """
+extends CharacterBody2D
+
+@export var speed: float = %.1f
+@export var jump_velocity: float = %.1f
+@export var coyote_time: float = 0.12
+@export var jump_cut_multiplier: float = 0.5   # how much velocity is kept when releasing jump early
+
+var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
+var coyote_timer: float = 0.0
+var was_on_floor: bool = false
+
+func _physics_process(delta: float) -> void:
+	# Apply gravity
+	if not is_on_floor():
+		velocity.y += gravity * delta
+		coyote_timer = max(coyote_timer - delta, 0.0)
+	else:
+		coyote_timer = coyote_time
+
+	# Jump (with coyote time)
+	if Input.is_action_just_pressed("%s") and (is_on_floor() or coyote_timer > 0.0):
+		velocity.y = jump_velocity
+		coyote_timer = 0.0
+
+	# Variable jump height (jump cut)
+	if Input.is_action_just_released("%s") and velocity.y < 0.0:
+		velocity.y *= jump_cut_multiplier
+
+	# Horizontal movement
+	var direction := Input.get_axis("%s", "%s")
+	if direction:
+		velocity.x = direction * speed
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, speed * 8.0 * delta)  # quick stop
+
+	move_and_slide()
+
+	# Track floor state for coyote time
+	was_on_floor = is_on_floor()
+""" % [speed, jump_velocity, jump_action, jump_action, left_action, right_action]
+
+			script.source_code = script_code
+			var err := script.reload()
+			if err != OK:
+				return {"status": "error", "message": "failed to create player script: " + str(err)}
+
+			player.set_script(script)
+
+			# Add the player to the scene
+			parent.add_child(player)
+
+			var note := "Simple %s player created at %s." % [movement_type, player.get_path()]
+			if texture_path == "":
+				note += " Using ColorRect placeholder. Pass texture_path to use a real sprite."
+
+			return {"status": "ok", "path": player.get_path(), "message": note}
+
+		"execute_live_script":
+			var code := str(cmd.get("code", ""))
+			if code.strip_edges() == "":
+				return {"status": "error", "message": "code required"}
+			var script = GDScript.new()
+			# wrap arbitrary statements for full exec (rapid prototyping/debug)
+			script.source_code = "extends Node\nfunc _exec():\n\t" + code.replace("\n", "\n\t") + "\n"
+			var err := script.reload()
+			if err != OK:
+				return {"status": "error", "message": "compile error: " + str(err)}
+			var instance = script.new()
+			# Use call_deferred for both attachment and execution.
+			# This prevents blocking _process / the TCP response loop, which was causing
+			# timeouts on node creation and other non-trivial live scripts.
+			get_tree().get_root().call_deferred("add_child", instance)
+			instance.call_deferred("_exec")
+			# We can't easily capture the return value when deferred.
+			# For creation/debug scripts the caller usually inspects the scene afterward
+			# via get_tree / get_node / list_children anyway.
+			return {"status": "ok", "result": "script_scheduled", "note": "Live script scheduled via call_deferred. Inspect results with get_tree/get_node/list_children or watch Godot Output."}
+
+		_:
+			return {"status": "error", "message": "unknown cmd: " + c}
+
+func _dump_tree(node: Node) -> Dictionary:
+	var d := {
+		"name": node.name,
+		"path": node.get_path(),
+		"type": node.get_class(),
+		"children": []
+	}
+	for child in node.get_children():
+		d.children.append(_dump_tree(child))
+	return d
+
+func _find_node_by_name_recursive(node: Node, target: String) -> Node:
+	if node.name == target:
+		return node
+	for child in node.get_children():
+		var found := _find_node_by_name_recursive(child, target)
+		if found:
+			return found
+	return null
+
+# Basic Variant marshaling for complex types (Vector2/position, Color, Dict/Array, Resource path)
+func _variant_from_json(v):
+	if v is Array and v.size() == 2:
+		return Vector2(v[0], v[1])
+	if v is Array and v.size() == 4:
+		return Color(v[0], v[1], v[2], v[3])
+	if v is Dictionary:
+		var d = {}
+		for k in v: d[k] = _variant_from_json(v[k])
+		return d
+	if v is Array:
+		var a = []
+		for item in v: a.append(_variant_from_json(item))
+		return a
+	if typeof(v) == TYPE_STRING and str(v).begins_with("res://"):
+		var loaded = load(v)
+		return loaded if loaded else v  # improved Resource: load if possible, else path
+	return v
+
+func _json_from_variant(v):
+	if v is Vector2:
+		return [v.x, v.y]
+	if v is Color:
+		return [v.r, v.g, v.b, v.a]
+	if v is Dictionary or v is Array:
+		# recurse for nested
+		if v is Dictionary:
+			var d = {}
+			for k in v: d[k] = _json_from_variant(v[k])
+			return d
+		var a = []
+		for item in v: a.append(_json_from_variant(item))
+		return a
+	if typeof(v) == TYPE_OBJECT and v is Resource:
+		var info = {"type": v.get_class()}
+		if v.resource_path: info["path"] = v.resource_path
+		# Robust: include sub-resource info if present (e.g. for nested Resources)
+		if v.has_method("get_path") and v.get_path() != v.resource_path: info["sub_path"] = v.get_path()
+		return info
+	return v
+
+# End of minimal runtime server. Expand _handle_cmd for more general commands as needed.
+
+# Testability notes (start for high issue):
+# - Current: monolithic autoload with _ready/_process and global get_tree().
+# - Minimal seams: extract ProtocolHandler class with injectable space_state for physics.
+# - Smoke test idea: minimal Godot scene with autoload + external Python TCP client exercising get_tree + set_property on Vector2.
+# - E2E smoke harness example (commented): # register as autoload; run Godot (headless or editor); use Python TCP client: s = socket.socket(); s.connect(('127.0.0.1',4242)); s.send(b'{"cmd":"get_tree"}\n'); print(s.recv(4096)); s.send(b'{"cmd":"set_property","node_path":"/root/Node","property":"position","value":[10,20]}\n'); s.send(b'{"cmd":"set_property","node_path":"/root/Node","property":"modulate","value":[1,0,0,1]}\n')
+# - TODO: add gdUnit4 or manual test scene in future without bloating MVP.

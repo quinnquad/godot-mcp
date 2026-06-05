@@ -106,3 +106,4 @@ func log_info(msg: String):
 func log_error(msg: String):
 	push_error(msg)
 	print("[ERROR] ", msg)
+

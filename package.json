@@ -1,11 +1,17 @@
 {
-  "name": "@quinnquad/godot-mcp",
-  "version": "0.1.0-elderglow-base",
-  "description": "Godot MCP server base for Elderglow development. Starting point with plans to extend using advanced forks.",
+  "name": "godot-mcp",
+  "version": "0.1.0",
+  "description": "Godot MCP server — zero-footprint + rich general tools for live control of Godot from Grok, Claude, and other agents. High ease-of-use focus for clean projects and rapid iteration (no script editing required by the human).",
   "main": "build/index.js",
+  "bin": {
+    "godot-mcp": "bin/godot-mcp.js",
+    "godot-mcp-elderglow": "scripts/godot-mcp-elderglow.js"
+  },
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "start:elderglow": "node build/index-elderglow.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0"
@@ -13,5 +19,27 @@
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/node": "^20.0.0"
-  }
+  },
+  "files": [
+    "build/index.js",
+    "build/bridge/zero-footprint.js",
+    "build/tools/general/",
+    "bin/godot-mcp.js",
+    "addons/godot_mcp_runtime/",
+    "README.md",
+    "MVP.md",
+    "RELEASE.md",
+    "docs/friend-starter-prompt.md",
+    "docs/getting-started-for-beginners.md"
+  ],
+  "keywords": [
+    "godot",
+    "mcp",
+    "ai",
+    "grok",
+    "claude",
+    "game-development",
+    "zero-footprint"
+  ],
+  "license": "MIT"
 }
