@@ -27,8 +27,13 @@ function printStatus() {
   console.error('  - Temporary bridge, no permanent changes to your Godot project.');
   console.error('  - Use the inject tool, then open project in Godot and press Play.');
   console.error('');
-  console.error('Persistent mode:');
-  console.error('  - Use your project\'s runtime autoload on 4242 (with full Elderglow handlers).');
+  console.error('Zero-footprint (default for this variant, port 4243):');
+  console.error('  - Recommended for clean testing of Elderglow builds.');
+  console.error('  - Use the inject tool from your agent, then open the project in Godot and press Play.');
+  console.error('  - The server defaults to routing to 4243 for zf injections.');
+  console.error('');
+  console.error('Persistent mode (4242):');
+  console.error('  - Use your project\'s runtime autoload on 4242 (with full Elderglow handlers in your local runtime_server.gd).');
   console.error('');
   console.error('After registering (see examples below), open a fresh Grok chat and use your normal Elderglow prompts.');
   console.error('');

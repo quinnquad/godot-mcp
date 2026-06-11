@@ -47,7 +47,9 @@ console.error('Godot MCP server initialized (stdio mode) - FULL Elderglow varian
 // The optional targetPort lets us route general tools to the correct runtime when a zero-footprint
 // injection is active (Option B architectural improvement).
 function sendRuntimeCmd(cmd: any, targetPort?: number): Promise<any> {
-  const port = targetPort ?? 4242;
+  // For the full Elderglow variant, default to 4243 (zero-footprint) for clean testing of Elderglow builds.
+  // Persistent mode users can still override or use the persistent autoload on 4242.
+  const port = targetPort ?? 4243;
   return new Promise((resolve) => {
     const net = require('net');
     const client = net.createConnection({ port, host: '127.0.0.1' }, () => {
