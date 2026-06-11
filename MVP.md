@@ -53,7 +53,7 @@ Rough flow:
 ## Success Criteria for v0.1
 
 - A person who has never used this before can, by following *only* the published instructions + one starter prompt, reach a keyboard-controllable platformer character that survives stopping Play, in under ~30 minutes of wall time, with almost no manual node/script work in the Godot editor.
-- Setup is path-agnostic (no "edit this I:\ path").
+- Setup is path-agnostic (no "edit this /your-drive path").
 - Both modes work and are documented, zero-footprint being the low-friction default for clean use.
 - Cleanup is obvious and safe.
 - The "give to a friend / non-technical person" path (via the starter prompt) is the primary happy path in the beginner docs.
