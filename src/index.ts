@@ -13,7 +13,7 @@ import { zeroFootprintToolNames, handleZeroFootprintTool, getActiveZeroFootprint
 const server = new Server(
   {
     name: 'godot-mcp',
-    version: '0.1.0',
+    version: '0.1.1',
   },
   {
     capabilities: {

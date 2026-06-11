@@ -1,6 +1,6 @@
 {
   "name": "godot-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Godot MCP server — zero-footprint + rich general tools for live control of Godot from Grok, Claude, and other agents. High ease-of-use focus for clean projects and rapid iteration (no script editing required by the human).",
   "main": "build/index.js",
   "bin": {
