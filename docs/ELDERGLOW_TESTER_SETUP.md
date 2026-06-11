@@ -221,6 +221,51 @@ Report success/failure and any error messages exactly.
 
 **Note**: Some tools may still need the game scene to be in a state where the player etc. exist. Start simple. Use execute_live_script for quick setup if needed.
 
+## Post-Setup Smoke Checklist (run this after successful registration + first Play)
+
+In a fresh chat with the elderglow server:
+
+1. Confirm variant: "Confirm you are the FULL Elderglow private godot-mcp variant. Say the init message you saw."
+2. List domain tools: "List all available tools whose names contain 'leyline', 'creature', 'ecosystem', 'farm', or 'defense'. Also confirm create_simple_player and inject_zero_footprint_bridge are present."
+3. Basic runtime (after Play + inject on a test project): Call get_tree (or get_project_info). Expect success.
+4. Superpower test: Call create_simple_player with sensible params for your test scene (e.g. movement_type="platformer", left_action/right_action/jump_action matching your inputs). Then simulate_input_batch with a few steps.
+5. (If you have local domain handlers) Call one domain tool, e.g. leyline_validate with a minimal pattern.
+
+If 1-4 pass, the "just works" base is solid. Report any failures with exact step + error.
+
+This checklist lets the next person (and their Grok) quickly validate the entire chain without guessing what "success" looks like.
+
+---
+
+## Elderglow Domain Tools (leyline, creature, ecosystem, farm, defense) - How to Actually Make Them Work
+
+The full variant (`index-elderglow.js`) lists the 10 domain tools and forwards them via `sendRuntimeCmd`.
+
+However, the *distributed* `addons/godot_mcp_runtime/runtime_server.gd` (and the zf `mcp_bridge.gd`) only implement the general/public command set. Domain commands will currently return "unknown cmd" or error.
+
+**For the next person who wants the domain tools to actually do something in an Elderglow checkout:**
+
+1. Copy the `addons/godot_mcp_runtime/` folder into your Elderglow Godot project (or use the zero-footprint inject + the bridge from the clone).
+
+2. In your project's copy of `runtime_server.gd` (or a local extension), add match arms for the domain names (or a generic fallback that calls your existing Elderglow code via `execute_live_script` style patterns). Example skeleton you can paste into `_handle_cmd`:
+
+```gdscript
+"leyline_validate":
+    var pattern := cmd.get("pattern", {})
+    # ... your existing leyline logic here ...
+    return {"status": "ok", "valid": true, "note": "implemented in your local runtime_server.gd"}
+
+# similarly for leyline_query, creature_spawn, creature_inspect, simulate_ecosystem, ecosystem_query, farm_plot_state, farm_plot_update, trigger_defense_event, defense_structure_inspect
+```
+
+3. Or, for quickest start: Use the general `execute_live_script` tool from the agent to run GDScript that calls your existing leyline/creature/etc. functions. The tool descriptions in the full variant already say "leverage execute_live_script for custom sim".
+
+See the private repo's `src/tools/elderglow/tools.ts` for the exact schemas and the forwarding in `handlers.ts`.
+
+Once you have a local runtime_server.gd with the domain arms, the tools will "just work" when the game is playing (persistent 4242 or zf 4243). Add this to your Elderglow project under version control (the game git already has good LFS/.gitignore).
+
+This is the minimal integration recipe so the next person isn't blocked on "the domain tools are listed but do nothing".
+
 ---
 
 ## Daily updates (for future)
