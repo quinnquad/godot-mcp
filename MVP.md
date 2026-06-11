@@ -59,6 +59,7 @@ Rough flow:
 - The "give to a friend / non-technical person" path (via the starter prompt) is the primary happy path in the beginner docs.
 - No Elderglow-specific content leaks into anything an end user or stranger would install or read as part of the public MVP.
 - All changes in the godot-mcp repo itself were done surgically, with proper discipline.
+- The Windows robustness, mandatory Play + watch Output, re-inject, fresh-chat, smoke checklist, and "extend for your own domain tools" lessons (generalized, Elderglow-free) have been incorporated into the public user-facing docs (README, getting-started, friend-starter, MVP, RELEASE).
 
 ## Current Status (as of plan approval)
 

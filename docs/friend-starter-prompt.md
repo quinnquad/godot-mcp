@@ -35,7 +35,7 @@ We are using a special "zero-footprint" Godot MCP setup. This means you can temp
   - Use input simulation when we want to test player controls.
   - Inspect the scene tree, properties, and UI whenever you're unsure about the current state.
 - Always work in this clean test project (never my "real" projects until we're confident).
-- When you want to connect to my running game, tell me exactly what to do (usually: run the inject tool if needed, then open the project in Godot and press Play).
+- When you want to connect to my running game, tell me exactly what to do: run the inject tool if needed, then open the project in Godot and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or persistent on 4242). If missing, tools fail with connect errors. If tools fail after first Play, re-run the inject (per-process state).
 - When we're done experimenting for the day, remind me to clean up the temporary bridge so my project stays clean.
 
 ### Our First Project
@@ -61,6 +61,8 @@ Let's begin!
 - Consider starting with an even simpler game first (e.g. a top-down collector or Flappy Bird style) if the friend has zero experience.
 - After they paste it, stay available for the first 10–15 minutes in case they get confused about the setup.
 - The quality of the experience depends heavily on how well the zero-footprint bridge + tool descriptions work for a fresh agent. This is why we did all the previous work on making the bridge rich.
+- Once the first controllable player works, have them (or you via the agent) run the Post-Setup Smoke / Verification Checklist from the getting-started guide in a fresh chat to confirm the full chain (list tools, Play+inject, create_simple_player + simulate, get_tree, optional screenshot).
+- For extending with your own domain/game-specific tools later: the base runtime implements only the general set. Copy addons/godot_mcp_runtime/ into the project and extend runtime_server.gd's _handle_cmd (or use execute_live_script to drive existing code). See getting-started for the generic skeleton. The agent can achieve most things with the built-in general tools + live scripts without custom registration.
 
 ---
 

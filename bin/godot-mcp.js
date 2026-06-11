@@ -23,7 +23,9 @@ function printStatus() {
   console.error('Zero-footprint mode (recommended for clean projects / friends):');
   console.error('  - Temporary bridge, no permanent changes to your Godot project.');
   console.error('  - Great for rapid prototyping and "the AI can literally play in my game".');
-  console.error('  - Use the inject tool from your agent, then open the project in Godot and press Play.');
+  console.error('  - After the agent runs inject_zero_footprint_bridge (or says injected): open the Godot project in the editor and press Play (F5 or the Play button).');
+  console.error('  - The bridge only starts listening while the game is actually running. Watch the Godot Output panel (bottom) for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or 4243).');
+  console.error('  - If tools fail after Play: ask the agent to re-run the inject (bridge state is per-process; fresh server or fresh Play often needs a re-inject).');
   console.error('');
   console.error('Persistent mode (power users):');
   console.error('  - Copy addons/godot_mcp_runtime/ into your project and enable the plugin.');

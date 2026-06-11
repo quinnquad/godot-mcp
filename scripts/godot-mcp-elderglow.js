@@ -18,12 +18,12 @@ const root = path.resolve(__dirname, '..');
 const buildEntry = path.join(root, 'build', 'index-elderglow.js');
 
 function printStatus() {
-  console.error('=== godot-mcp-elderglow (FULL private Elderglow variant) ===');
+  console.error('=== godot-mcp-elderglow (FULL private / extended variant) ===');
   console.error('');
-  console.error('This is the complete internal version with all Elderglow-specific tools.');
+  console.error('This is the complete internal version with all domain-specific tools.');
   console.error('For the public general-only version, use the regular godot-mcp package.');
   console.error('');
-  console.error('Zero-footprint mode (recommended for clean testing of Elderglow builds):');
+  console.error('Zero-footprint mode (recommended for clean testing of extended/private builds):');
   console.error('  - Temporary bridge, no permanent changes to your Godot project.');
   console.error('  - Use the inject tool, then open project in Godot and press Play.');
   console.error('');

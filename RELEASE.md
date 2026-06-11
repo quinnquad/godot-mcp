@@ -26,6 +26,7 @@ This is the repeatable process for producing a consumable v0.1 release so that s
    - Root README, `MVP.md`, `docs/friend-starter-prompt.md`, `docs/getting-started-for-beginners.md` are the primary user-facing docs.
    - They must be path-agnostic and beginner-friendly.
    - Technical docs (ARCHITECTURE etc.) may stay more detailed but should not be the first thing a beginner sees, and any Elderglow content must be clearly labeled as "future/private extension".
+   - Confirm the robustness lessons (mandatory Play + watch Godot Output, re-inject after Play/server, Windows PATH/wrapper/quoting tips, generic Post-Setup Smoke Checklist, "Extending with your own domain / game-specific tools" recipe) have been added to the public docs in generalized form (no Elderglow/leyline names, no private URLs, placeholders only). Re-affirm the full Elderglow-free gate for all public artifacts.
 
 6. **Version**
    - Bump version in package.json (semver, starting from 0.1.0 for this MVP).

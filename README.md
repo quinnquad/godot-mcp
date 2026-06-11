@@ -31,7 +31,13 @@ See the exact "paste this into a brand new chat" prompt for a friend or yourself
 - Open a fresh chat, paste the starter prompt (pointing at your clean project path).
 - Follow the tiny steps Grok gives you. It will tell you exactly when to inject (if needed) and when to open Godot + press Play.
 
+After the agent says it has injected (or you ran `inject_zero_footprint_bridge`), open the Godot project in the editor and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel (bottom of the editor) for a message like "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or the persistent equivalent). If you don't see it, runtime tools will time out or say "cannot connect".
+
+If tools fail after the first Play: ask the agent to re-run the inject (zero-footprint bridge state is per-process; a fresh server or fresh Play often needs a re-inject).
+
 The first time you Play after the AI works, you should have a real controllable character.
+
+**Windows / PATH / quoting note**: After `npm install -g godot-mcp`, reopen terminal or refresh PATH explicitly (`$env:Path = "C:\Program Files\nodejs;" + [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`). For quoting issues with `grok mcp add`, use a small .cmd wrapper (see getting-started-for-beginners.md for the generic template using %ProgramFiles% + where node fallback). Use `cmd /c "npm ..."` for execution policy. Always test in a fresh chat.
 
 ## Two Modes
 
