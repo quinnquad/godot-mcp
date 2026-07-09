@@ -22,6 +22,8 @@
 godot --path /path/to/creature_quest_slice
 ```
 
+**Copying from an npm/tarball install:** git clones include this folder’s `.gitignore`; npm pack omits `.gitignore` files by design. After copying the example out of `node_modules`, ignore (or delete) `.godot/` and any zero-footprint inject residue under `addons/godot_mcp_bridge/`.
+
 ## Combat tests (headless)
 
 Pure battle math lives under `scripts/combat/` and is what the battle UI uses. Run automated tests:

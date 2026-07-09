@@ -42,7 +42,7 @@ Other 4.x builds are expected to work; these three are the ones we have run end-
 
 ### Example project (shippable demo)
 
-**[examples/creature_quest_slice](examples/creature_quest_slice)** — Godot **4.7** Pokémon-style vertical slice (original creatures only): top-down overworld, tall-grass encounter, turn-based 1v1 battle with type effectiveness. Open it, press Play, then use zero-footprint inject + `list_children` / `simulate_input_batch` / `call_method` as documented in that folder’s README.
+**[examples/creature_quest_slice](examples/creature_quest_slice)** — Godot **4.7** Pokémon-style vertical slice (original creatures only): top-down overworld, tall-grass encounter, turn-based 1v1 battle with type effectiveness. Open it, press Play, then use zero-footprint inject + `list_children` / `simulate_input_batch` / `execute_live_script` (e.g. battle `mcp_pick_move`) as documented in that folder’s README.
 
 ### Agent tips (impressive defaults)
 
