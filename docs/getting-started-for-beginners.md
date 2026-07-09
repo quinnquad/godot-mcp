@@ -2,6 +2,20 @@
 
 This guide is for someone who has **never made a game before** and wants to use Grok (with the Godot MCP tools) to build their first game.
 
+**Tested Godot versions:** **4.6**, **4.7**, and **4.8-dev1** (including mono editor builds for 4.7/4.8 smokes). Use a matching Godot 4.x editor for best results.
+
+**Important:** Live tools only work while your game is **in Play** and the Output panel shows the MCP bridge line (4243 for zero-footprint). If tools say they cannot connect, press Play again.
+
+**Discover the scene** with `list_children` on `/root` or `/root/Main` (lightweight). Prefer that over dumping the entire tree with `get_tree` on big projects.
+
+**Make a character walk** (not just twitch) using a hold:
+
+```
+simulate_input_batch steps: [{ "type": "action", "action": "move_right", "hold_ms": 500 }]
+```
+
+That keeps the action pressed across physics frames so the character actually moves.
+
 ## The Big Idea
 
 Normally, to work with Godot you need to install plugins, edit project settings by hand, and know a lot of technical stuff.

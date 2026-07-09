@@ -1,6 +1,6 @@
 # godot-mcp Release Process (public MVP)
 
-Current public version: **0.1.2** (runtime port auto-detect: live tools reach 4243 without in-process inject).
+Current public version: **0.1.3** (JOS-15 non-blocking hold_ms, hardened list_children, Godot 4.6/4.7/4.8-dev1 tested notes).
 
 Repeatable process for a consumable public release so strangers can install from GitHub.
 

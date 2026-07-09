@@ -35,11 +35,34 @@ export const generalTools = [
   { name: "debug_print", description: "General: print to Godot console / push_error (live or bridge)", inputSchema: { type: "object", properties: { message: { type: "string" }, level: { type: "string" } } } },
   { name: "pause_game", description: "General: pause/step the game tree (live)", inputSchema: { type: "object", properties: { action: { type: "string" } } } },
   // Additional general Godot tools (editor/runtime useful for typical 2D projects)
-  { name: "list_children", description: "General: list direct children of a node", inputSchema: { type: "object", properties: { node_path: { type: "string" } } } },
+  {
+    name: "list_children",
+    description: "Live discovery (preferred over get_tree on large scenes): shallow list of child nodes (name, path, type). Requires the game in Play with bridge listening. Optional max_depth (default 1 = direct children only) and limit (default 200). Clear error if path missing or Play is not running.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        node_path: { type: "string", description: "e.g. /root/Main" },
+        max_depth: { type: "number", description: "1 = shallow only (default). Higher values walk descendants." },
+        limit: { type: "number", description: "Max nodes returned (default 200)." },
+      },
+    },
+  },
   { name: "get_node", description: "General: get basic info about a node", inputSchema: { type: "object", properties: { node_path: { type: "string" } } } },
   { name: "find_node_by_name", description: "General: find first descendant node by name (recursive)", inputSchema: { type: "object", properties: { root_path: { type: "string" }, name: { type: "string" } } } },
   { name: "capture_screenshot", description: "Live: capture viewport screenshot (path+size). Works on persistent 4242 or zero-footprint 4243 after injection.", inputSchema: { type: "object", properties: {} } },
-  { name: "simulate_input_batch", description: "Live: batched input (steps: action/mouse_move/delay). Use to control characters or UI. Works on persistent 4242 or zero-footprint 4243 after injection.", inputSchema: { type: "object", properties: { steps: { type: "array" } } } },
+  {
+    name: "simulate_input_batch",
+    description: "Live: drive Input actions while the game is in Play. Steps: {type:'action', action, press} | {type:'action', action, hold_ms} for sustained locomotion (JOS-15 — non-blocking; physics keeps running) | {type:'delay', ms} | {type:'mouse_move', pos:[x,y]}. Prefer hold_ms for walking/running so Input.get_axis stays non-zero across frames.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        steps: {
+          type: "array",
+          description: "e.g. [{type:'action', action:'move_right', hold_ms:500}, {type:'action', action:'jump', hold_ms:80}]",
+        },
+      },
+    },
+  },
   { name: "execute_live_script", description: "Live: execute arbitrary GDScript with full SceneTree access (great for rapid prototyping, creating objects, attaching scripts, etc.). Works on persistent 4242 or zero-footprint 4243 after injection. Use carefully.", inputSchema: { type: "object", properties: { code: { type: "string" } } } },
   // Input action management (critical for creating controllable characters via simulate_input_batch)
   { name: "list_input_actions", description: "Live: list current input actions and their bound events. Essential before using simulate_input_batch with custom actions. Works on both bridges.", inputSchema: { type: "object", properties: {} } },
