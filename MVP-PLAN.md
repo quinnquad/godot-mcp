@@ -54,7 +54,7 @@ A **minimum but high-ease-of-use** package that lets a motivated Godot user + Gr
 **Functional Strengths (why we're "close" on the magic)**:
 - Mature zero-footprint injection (`src/bridge/zero-footprint.ts` + defensive line-based autoload editing in the injected `mcp_bridge.gd`).
 - Rich general tool surface (~55 tools in `src/tools/general/tools.ts`): full node lifecycle, properties (complex types), signals, animation, UI, physics (raycast), debug, resources, introspection + the key ease-of-use superpowers (`create_simple_player` with coyote/jump-cut/accel, `add/remove/has/list_input_actions`, `simulate_input_batch`, `capture_screenshot`, `execute_live_script` with Node wrapper + `call_deferred` safety from 15ff5662 + later hardening).
-- Live E2E proven on clean `I:\newclean\new-game-project` (inject → Play → add actions → create player → execute for floor + reset → simulate drive + jump → inspections + screenshots all green).
+- Live E2E proven on clean `/path/to/newclean\new-game-project` (inject → Play → add actions → create player → execute for floor + reset → simulate drive + jump → inspections + screenshots all green).
 - Persistence solution: Direct bake to local `test.tscn` (with external `player.gd` + floor + Camera2D) + `project.godot` `[input]` patch. The `create_persistent_player.gd` (SceneTree baker) provides a reusable way to re-bake.
 - Excellent handoff artifacts: `docs/friend-starter-prompt.md` (designed exactly for "paste into brand new Grok chat") and `docs/getting-started-for-beginners.md`.
 - Dual-mode architecture documented (persistent 4242 plugin vs zero-footprint 4243).
@@ -62,7 +62,7 @@ A **minimum but high-ease-of-use** package that lets a motivated Godot user + Gr
 - Karpathy hygiene already strong in the repo (MEMORY.md, ERRORS.md, surgical history).
 
 **Current Packaging / Ease-of-Use Gaps (the real distance to "shipable")**:
-- Hard-coded personal paths everywhere (`I:\godot-mcp` in README, start-godot-mcp.ps1, registration examples, docs).
+- Hard-coded personal paths everywhere (`/path/to/godot-mcp` in README, start-godot-mcp.ps1, registration examples, docs).
 - Launcher is Windows-only PS1 with absolute paths and "daily prep" flavor (not a user-facing `godot-mcp` command).
 - `package.json` is internal (`@quinnquad/godot-mcp`, "0.1.0-elderglow-base", no `bin` entry).
 - Docs and README still heavily Elderglow-flavored and assume the recipient has a "giver" who already did the dev setup.
@@ -91,7 +91,7 @@ All phases must prioritize the user's ease-of-use principles. Changes in the god
    - **Hard constraint (user review comment)**: Keep *all* Elderglow-specific stuff out of the public release. This includes Elderglow tools, handlers, references in code/docs/README/package.json/launcher output/starter prompts/template projects, private branding, and any Elderglow-specific examples or language. The public MVP must be purely general-purpose Godot + zero-footprint experience. Elderglow remains 100% in the private repo/layer and can be added later as an optional extension.
 4. Create (or update) a `MVP.md` or section in README that defines "what a user gets after following the instructions" in one page. Explicitly state the "Elderglow-free public surface" rule here.
 5. Inventory every hard-coded path / personal reference and mark them for removal or parameterization.
-6. Confirm the current baked example (`I:\newclean\new-game-project\test.tscn` + `player.gd`) is the canonical "hero demo" (controllable player on a simple level that persists).
+6. Confirm the current baked example (`/path/to/newclean\new-game-project\test.tscn` + `player.gd`) is the canonical "hero demo" (controllable player on a simple level that persists).
 
 **Deliverables**:
 - Updated plan (this file) with locked scope.
@@ -189,7 +189,7 @@ All phases must prioritize the user's ease-of-use principles. Changes in the god
 **Goal**: Users don't start from a completely empty "New Game Project" — they get a small, clean, ready example that already demonstrates the controllable player + persistence, so the first session feels like "magic" immediately.
 
 **Work**:
-1. Take the proven `I:\newclean\new-game-project` (or a cleaned copy) as the seed:
+1. Take the proven `/path/to/newclean\new-game-project` (or a cleaned copy) as the seed:
    - `test.tscn` (or rename to `main.tscn`) with the baked Player (via external `player.gd`), Floor, Camera2D, minimal level.
    - `player.gd` (the movement script — make it nicely commented for beginners).
    - `project.godot` with the three input actions + (optionally) the MCPBridge autoload for convenience, but with clear comments that zero-footprint doesn't require it long-term.
@@ -303,7 +303,7 @@ All phases must prioritize the user's ease-of-use principles. Changes in the god
 **Hard user constraint (incorporated from review comment on this plan)**: All Elderglow-specific stuff must be kept out of the public release. This is treated as a non-negotiable gate in Phase 0 (full audit + remediation) and Phase 4 (pre-release audit). Public artifacts (package, docs, launcher, prompts, templates) must be purely general Godot + zero-footprint.
 
 **Phase 3 Status (progress this session)**: Complete for v0.1.
-- The proven structure in `I:\newclean\new-game-project` (baked `test.tscn` with Player + external `player.gd` + Camera2D + Floor, the three input actions in project.godot, the reusable `create_persistent_player.gd` baker at the project root) is the canonical template seed.
+- The proven structure in `/path/to/newclean\new-game-project` (baked `test.tscn` with Player + external `player.gd` + Camera2D + Floor, the three input actions in project.godot, the reusable `create_persistent_player.gd` baker at the project root) is the canonical template seed.
 - Added `GODOT_MCP_NOTES.md` (beginner-friendly in-project doc) explaining exactly what is there, how the AI baked it, how to keep iterating with live tools + re-bake, and how to clean up. Generic and self-contained.
 - This (plus the create baker script) is what gets distributed for the "starter platformer" experience in v0.1 — either as a zip attached to the release, a git template, or the thing the AI creates on the first session using the baker logic.
 - The new root README (see Phase 2) now prominently describes the baked hero example and points people at using the AI + this structure.

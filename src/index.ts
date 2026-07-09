@@ -9,11 +9,15 @@ import { generalTools } from './tools/general/tools';
 
 // General bridge infrastructure (zero-footprint on-demand injection - public / reusable)
 import { zeroFootprintToolNames, handleZeroFootprintTool, getActiveZeroFootprintPort } from './bridge/zero-footprint';
+import {
+  PERSISTENT_RUNTIME_PORT,
+  resolveRuntimePort,
+} from './bridge/runtime-port';
 
 const server = new Server(
   {
     name: 'godot-mcp',
-    version: '0.1.1',
+    version: '0.1.2',
   },
   {
     capabilities: {
@@ -36,12 +40,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 // Use stderr for startup messages.
 console.error('Godot MCP server initialized (stdio mode) - general public surface');
 
-// Minimal TCP client helper for Phase 2b runtime.
-// Supports both the persistent runtime (default 4242) and zero-footprint injected bridges (e.g. 4243).
-// The optional targetPort lets us route general tools to the correct runtime when a zero-footprint
-// injection is active (Option B architectural improvement).
+// Minimal TCP client helper for live runtime tools.
+// Supports persistent runtime (4242) and zero-footprint MCPBridge (4243).
+// targetPort is resolved by getTargetRuntimePort (inject map, then live probe).
 function sendRuntimeCmd(cmd: any, targetPort?: number): Promise<any> {
-  const port = targetPort ?? 4242;
+  const port = targetPort ?? PERSISTENT_RUNTIME_PORT;
   return new Promise((resolve) => {
     const net = require('net');
     const client = net.createConnection({ port, host: '127.0.0.1' }, () => {
@@ -62,27 +65,38 @@ function sendRuntimeCmd(cmd: any, targetPort?: number): Promise<any> {
         }
       }
     });
-    client.on('error', () => resolve({ status: 'error', error_type: 'connection', message: `Cannot connect to runtime on ${port} — start Godot game with autoload stub registered` }));
+    client.on('error', () => resolve({
+      status: 'error',
+      error_type: 'connection',
+      message: `Cannot connect to runtime on ${port} — press Play in Godot with MCPBridge (4243 zero-footprint) or the persistent plugin (4242) listening`,
+    }));
     client.on('timeout', () => { client.end(); resolve({ status: 'error', error_type: 'timeout', message: 'runtime timeout (is Godot running with autoload?)' }); });
     client.on('close', () => { /* future retry hook */ });
   });
 }
 
-// Lightweight routing support for Option B (zero-footprint):
-// When a zero-footprint bridge has been injected, general tools should talk to its port
-// instead of always defaulting to the persistent runtime on 4242.
-function getTargetRuntimePort(): number | undefined {
+/**
+ * JOS-17: prefer in-process inject port; otherwise probe 4242 then 4243 so tools
+ * work against an already-running zero-footprint bridge without re-inject.
+ */
+async function getTargetRuntimePort(): Promise<number | undefined> {
   const zfPort = getActiveZeroFootprintPort();
-  return zfPort ?? undefined;
+  const resolved = await resolveRuntimePort(zfPort);
+  return resolved ?? undefined;
 }
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params || {};
   if (name === 'get_project_info') {
-    return { content: [{ type: 'text', text: 'Godot MCP 0.2 (Phase 2) | Bridge for headless ops | Runtime tools for live editing (autoload on 4242 when game running)' }] };
+    return {
+      content: [{
+        type: 'text',
+        text: 'Godot MCP 0.1.2 | Public general surface | Live tools: persistent plugin on 4242, zero-footprint MCPBridge on 4243 (auto-detected)',
+      }],
+    };
   }
-  // Phase 2b live runtime tools (connect to Godot autoload per protocol in ARCHITECTURE.md)
-  const targetPort = getTargetRuntimePort();
+  // Live runtime tools — resolve port per call (inject map or live probe)
+  const targetPort = await getTargetRuntimePort();
 
   if (name === 'get_tree') {
     const resp = await sendRuntimeCmd({ cmd: 'get_tree', root: (args && args.root) || '/root' }, targetPort);

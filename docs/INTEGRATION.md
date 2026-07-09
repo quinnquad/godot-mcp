@@ -60,7 +60,7 @@ def call_godot_mcp_tool(tool_name: str, arguments: Dict[str, Any], server_cmd: l
 
 # Usage from agent:
 # result = call_godot_mcp_tool("get_tree", {"root": "/root"})
-# result = call_godot_mcp_tool("create_scene", {"project_path": "I:\\my-project", "scene_path": "res://Test.tscn"})
+# result = call_godot_mcp_tool("create_scene", {"project_path": "/path/to/your-project", "scene_path": "res://Test.tscn"})
 ```
 
 Phase 2c adapter finalized. The full Godot MCP (bridge + live runtime + general tools) is now directly usable from any agent via stdio. Custom Elderglow tools are de-prioritized/future.

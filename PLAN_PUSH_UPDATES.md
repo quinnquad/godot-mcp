@@ -1,13 +1,13 @@
 # Plan: Push Robustness Updates to Elderglow Private Git + Generalized Public Version (with Full Double-Check)
 
-**Created**: 2026-06-10 (during audit session on I:\godot-mcp)  
+**Created**: 2026-06-10 (during audit session on /path/to/godot-mcp)  
 **Request**: "create a plan to push the updates to the elder glow private git but then also update the public facing version with the same changes just remembering to remove all the elderglow specific things and also just double check everything to make sure there is nothing in there I wouldn't want public facing"
 
 **Executed on 2026-06-10** (by implementer following this plan exactly):
 - Phase 0 pre-audit: confirmed (ahead 4->5, ELDERGLOW unstaged with smoke+recipe + MEMORY, remotes origin/public + private-elderglow, tarball 15 files exact match snapshot, leaks only in declarations+split, tracked privates match).
 - Phase 1: `git add docs/ELDERGLOW_TESTER_SETUP.md; git commit -m "..."` → a712d98; `git push private-elderglow main` (540584b..a712d98, no auth prompt, succeeded); ls-remote + log verified.
 - Phase 2: Surgical search_replace (read-before) only on allowed public files (README, MVP, RELEASE, docs/getting-started-for-beginners.md, docs/friend-starter-prompt.md, bin/godot-mcp.js, scripts/godot-mcp-elderglow.js light). Inserted exact generalized Windows/PATH/wrapper, mandatory Play+watch-Output+re-inject, smoke checklist (generic, no domain), extending recipe (generic skeleton), robustness bullets in MVP/RELEASE. No private files or names touched.
-- Phase 3: Full gate (all commands): npm run build + real npm pack (15 files); tarball extract+Select-String (Elderglow only in MVP/RELEASE constraint text + package bin + elder script split; 0 paths); dedicated grep + PS source scans on all public-mapped 15 + addons/build (clean except expected); full reads of ELDERGLOW_TESTER_SETUP.md + elder/tools+handlers + index-elderglow (private clone url + 10 names + "FULL private/internal" + WARNINGs); MEMORY/ERRORS/plan scans (dev I: + C:\Users\woods history only, no secrets); spot re-reads of edited sections (Play/Output/re-inject/Windows/smoke/extension all present+generic+accurate); package "files" clean; staged names only allowed. **Phase 3 gate PASSED 100%. Explicit decision on github-visible private content (ELDERGLOW doc + elder src + index-elder in public history): YES, proceed (monorepo reality + prior tracked; npm tarball + public docs 100% Elderglow-free per hard constraint; no current real paths/secrets; self-documenting + declarations protect users; acceptable dev record).**
+- Phase 3: Full gate (all commands): npm run build + real npm pack (15 files); tarball extract+Select-String (Elderglow only in MVP/RELEASE constraint text + package bin + elder script split; 0 paths); dedicated grep + PS source scans on all public-mapped 15 + addons/build (clean except expected); full reads of ELDERGLOW_TESTER_SETUP.md + elder/tools+handlers + index-elderglow (private clone url + 10 names + "FULL private/internal" + WARNINGs); MEMORY/ERRORS/plan scans (dev I: + C:\Users\yourname history only, no secrets); spot re-reads of edited sections (Play/Output/re-inject/Windows/smoke/extension all present+generic+accurate); package "files" clean; staged names only allowed. **Phase 3 gate PASSED 100%. Explicit decision on github-visible private content (ELDERGLOW doc + elder src + index-elder in public history): YES, proceed (monorepo reality + prior tracked; npm tarball + public docs 100% Elderglow-free per hard constraint; no current real paths/secrets; self-documenting + declarations protect users; acceptable dev record).**
 - Phase 4: git add (exactly the 7 allowed public); staged confirmed only those; commit 8b68623 (exact plan message); `git push origin main` (fe7d1fc..8b68623, succeeded); now origin/main at 8b68623, private-elderglow at a712d98; verifs (log, ls-remote, show --stat) green.
 - Phase 5: MEMORY.md appended (mandated format, full evidence+decision+files list+next); tgz cleanup; this plan top updated; final git/pack verifs.
 - Commits: private a712d98 on private-elderglow; public 8b68623 on origin. All outputs captured in session + this file + MEMORY.
@@ -59,7 +59,7 @@ This plan is self-contained. Follow phases in order. Capture all command output.
   - "Elderglow" / domain names (leyline, creature, ecosystem, farm, defense) appear in: the private ELDERGLOW_TESTER_SETUP.md (by design), src/tools/elderglow/* (tool schemas + "Elderglow:" + "requires Elderglow nodes" warnings), src/index-elderglow.ts (comments + 4243 default note + console "FULL ... private/internal"), scripts/godot-mcp-elderglow.js (status text — this one ships in npm), package.json (bin entries — intentional), and historical dev logs (MEMORY.md, ERRORS.md, CONTEXT.md, old plans — these are tracked and will be in public github history; acceptable as development record).
   - Drive/path examples: A few in the private ELDERGLOW doc (template "C:\Users\YOURNAME\..." and "C:\full\path\..." — placeholder style, not a real current home), in tests/e2e_zero_footprint.py and bridge/direct_godot.py (examples), docs/INTEGRATION.md, and old MEMORY. None in the shipping public docs/launchers/addons.
   - 4243 appears in mcp_bridge.gd (correct, zf default), private index-elderglow + launcher + doc (by design for clean Elderglow testing), and some history. Public general defaults to 4242.
-  - Overall: No obvious secrets, real current user paths (e.g. no "C:\Users\woods" active in public-mapped files), or surprises in the 15-file public tarball. The split launcher text is self-documenting. The main items for the Phase 3 "would I want this public on github?" review are the ELDERGLOW doc (detailed internal tester flow + game mechanic names + private repo clone url) and the 10 elder tool schemas (leyline etc.).
+  - Overall: No obvious secrets, real current user paths (e.g. no "C:\Users\yourname" active in public-mapped files), or surprises in the 15-file public tarball. The split launcher text is self-documenting. The main items for the Phase 3 "would I want this public on github?" review are the ELDERGLOW doc (detailed internal tester flow + game mechanic names + private repo clone url) and the 10 elder tool schemas (leyline etc.).
 
 **No plan.md existed at root** (other PLAN_* and MVP-PLAN.md are different scope; this new focused file was created for the exact request).
 
@@ -70,7 +70,7 @@ The rest of this file is the executable plan.
 These re-confirm the snapshot above and give you the exact current evidence.
 
 ```pwsh
-cd 'I:\godot-mcp'
+cd '/path/to/godot-mcp'
 
 Write-Host '=== 0.1 GIT STATUS + AHEAD/BEHIND ==='
 git status
@@ -103,7 +103,7 @@ git ls-files | Select-String -Pattern 'ELDERGLOW|elderglow|index-elderglow'
 This gets your teammate / next person the complete latest "just works" instructions (the Windows friction fixes + the new smoke checklist + the exact recipe for wiring the 10 domain tools into a runtime_server.gd).
 
 ```pwsh
-cd 'I:\godot-mcp'
+cd '/path/to/godot-mcp'
 
 # 1. Commit the final piece of the updates (the smoke + domain recipe)
 git add docs/ELDERGLOW_TESTER_SETUP.md
@@ -195,7 +195,7 @@ Apply the robustness / zero-friction lessons (Play mandatory + watch Output, re-
 
 **The public commit (only public files)**:
 ```pwsh
-cd 'I:\godot-mcp'
+cd '/path/to/godot-mcp'
 
 # Stage ONLY public-appropriate files (example — adjust to exactly what you edited)
 git add README.md MVP.md RELEASE.md docs/getting-started-for-beginners.md docs/friend-starter-prompt.md bin/godot-mcp.js
@@ -212,7 +212,7 @@ Run these **after** your Phase 2 edits but **before** the public commit + push. 
 
 1. Rebuild + pack surface
    ```pwsh
-   cd 'I:\godot-mcp'
+   cd '/path/to/godot-mcp'
    npm run build
    npm pack --dry-run 2>&1 | Out-String -Width 3000
    ```
@@ -234,7 +234,7 @@ Run these **after** your Phase 2 edits but **before** the public commit + push. 
 
 3. Source-level leak scan limited to public-included + github-visible public docs (use the dedicated grep tool with path or PowerShell Select-String on the exact list from Phase 0.4)
    - Target the 15 tarball files + root public .md + bin/ + scripts/ (the elder one) + addons/.
-   - Forbidden / attention patterns: `(?i)elderglow`, `leyline|creature_spawn|ecosystem|farm_plot|defense_structure`, private clone urls, real non-placeholder paths (C:\Users\woods or current home), "teammate", "issues.md", "register-elderglow", "godot-mcp-elderglow-full", "FULL Elderglow private".
+   - Forbidden / attention patterns: `(?i)elderglow`, `leyline|creature_spawn|ecosystem|farm_plot|defense_structure`, private clone urls, real non-placeholder paths (C:\Users\yourname or current home), "teammate", "issues.md", "register-elderglow", "godot-mcp-elderglow-full", "FULL Elderglow private".
    - Expected: only in scripts/godot-mcp-elderglow.js (the split text) and package.json bin entries. Zero in the user docs that a stranger following "npm install -g godot-mcp" would read first.
 
 4. Review the files that *will live in public github history* even if excluded from npm:
@@ -255,7 +255,7 @@ Run these **after** your Phase 2 edits but **before** the public commit + push. 
 ## Phase 4: Commit (Public-Only) + Push to Public Remote
 
 ```pwsh
-cd 'I:\godot-mcp'
+cd '/path/to/godot-mcp'
 
 # Double-check the staging area one last time
 git status
@@ -269,7 +269,7 @@ git push origin main
 
 ## Phase 5: Records, Cleanup, Verification for Next Person
 
-1. Append to the project MEMORY.md (I:\godot-mcp\MEMORY.md). Use the established format (date + bold decision + bullet changes + verification + next). Example anchor text you can search for and append after:
+1. Append to the project MEMORY.md (/path/to/godot-mcp\MEMORY.md). Use the established format (date + bold decision + bullet changes + verification + next). Example anchor text you can search for and append after:
 
    ```
    ## 2026-06-10 — Push private updates + public generalized robustness (per PLAN_PUSH_UPDATES.md)
