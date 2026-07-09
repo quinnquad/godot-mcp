@@ -7,11 +7,19 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Build artifacts
+# Build / pack artifacts
 *.tgz
 godot-mcp-*.tgz
+addons-godot_mcp_runtime.zip
 
 # IDE/OS
 .vscode/
 .idea/
 Thumbs.db
+
+# Local-only notes (never re-commit to public)
+MEMORY.md
+ERRORS.md
+CONTEXT.md
+NEW_USER_TEST.md
+start-godot-mcp.ps1

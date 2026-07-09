@@ -25,9 +25,9 @@ The hero experience: from a completely clean Godot 4 2D project → one or two c
 - Both modes documented (zero-footprint for clean/easy, persistent plugin for power users who want always-on), with zero-footprint as the recommended first path for most people.
 
 **Explicitly NOT included in the public v0.1 MVP** (hard constraint):
-- Any and all Elderglow-specific tools, data, handlers, examples, or branding. (Elderglow remains private and can be layered on later as an optional extension.)
-- The full "private" tool surface.
-- Any internal history docs (e.g. PUBLIC_PRIVATE_SPLIT.md is not part of the user-facing package).
+- Private game-specific domain tools, data, handlers, or branding (those stay in a separate private tree).
+- The full private monorepo tool surface.
+- Internal history / planning dumps (not part of the user-facing package).
 - Complex installers, AssetLib submission, or fancy GUIs for v0.1.
 
 ## Two Modes
@@ -57,9 +57,9 @@ Rough flow:
 - Both modes work and are documented, zero-footprint being the low-friction default for clean use.
 - Cleanup is obvious and safe.
 - The "give to a friend / non-technical person" path (via the starter prompt) is the primary happy path in the beginner docs.
-- No Elderglow-specific content leaks into anything an end user or stranger would install or read as part of the public MVP.
+- No private game-specific content leaks into anything an end user or stranger would install or read as part of the public MVP.
 - All changes in the godot-mcp repo itself were done surgically, with proper discipline.
-- The Windows robustness, mandatory Play + watch Output, re-inject, fresh-chat, smoke checklist, and "extend for your own domain tools" lessons (generalized, Elderglow-free) have been incorporated into the public user-facing docs (README, getting-started, friend-starter, MVP, RELEASE).
+- The Windows robustness, mandatory Play + watch Output, re-inject, fresh-chat, smoke checklist, and "extend for your own domain tools" lessons have been incorporated into the public user-facing docs (README, getting-started, friend-starter, MVP, RELEASE).
 
 ## Current Status (as of plan approval)
 
@@ -75,4 +75,4 @@ This MVP is deliberately minimum while ruthlessly protecting the high ease-of-us
 
 **Next**: Execute the phases in the full plan, starting with Phase 0 audit (already partially executed in the planning session — see the audit findings recorded in the plan.md). 
 
-All public artifacts will be audited for (and must contain zero) Elderglow-specific content before any release.
+All public artifacts will be audited for (and must contain zero) private game-specific content before any release.

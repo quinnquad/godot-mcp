@@ -14,7 +14,7 @@ This is very useful for verifying that the zero-footprint path works correctly
 after changes to mcp_bridge.gd or the MCP server.
 
 Usage:
-    python tests/e2e_zero_footprint.py --project "I:\\path\\to\\your\\clean\\project"
+    python tests/e2e_zero_footprint.py --project "/path/to/your/clean/project"
 
 The script will:
 - Launch the Godot MCP server.

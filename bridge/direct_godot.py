@@ -8,10 +8,10 @@ It handles Godot executable resolution, argument passing (with tolerance for
 PowerShell-mangled params), and result parsing.
 
 Usage:
-    python bridge/direct_godot.py --project "I:\\mcp-test" --operation create_scene --params '{"scene_path":"res://Test.tscn","root_node_type":"Node2D"}'
+    python bridge/direct_godot.py --project "/path/to/godot/project" --operation create_scene --params '{"scene_path":"res://Test.tscn","root_node_type":"Node2D"}'
 
 Environment Variables:
-    GODOT_PATH: Path to Godot executable (overrides defaults)
+    GODOT_PATH: Path to Godot executable (required unless --godot-path is set)
 """
 
 import os
@@ -67,14 +67,11 @@ def get_godot_executable() -> str:
             if os.path.exists(candidate):
                 return candidate
 
-    # Default fallback - user's console version (I: layout per common user setup; override via GODOT_PATH env or --godot-path)
-    default_path = r"I:\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
-    if os.path.exists(default_path):
-        return default_path
-
-    # Fallback to regular if console not found
-    fallback = r"I:\Godot_v4.6.3-stable_win64.exe"
-    return _prefer_console_version(fallback)
+    # No machine-specific defaults — require GODOT_PATH or --godot-path
+    raise FileNotFoundError(
+        "Godot executable not found. Set GODOT_PATH to your Godot binary "
+        "(prefer the *_console.exe build on Windows) or pass --godot-path."
+    )
 
 
 def resolve_godot_executable(explicit_path: Optional[str] = None) -> str:
