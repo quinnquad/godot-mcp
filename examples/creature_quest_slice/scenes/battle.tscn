@@ -1,0 +1,123 @@
+[gd_scene load_steps=2 format=3 uid="uid://cq_battle"]
+
+[ext_resource type="Script" path="res://scripts/battle/battle_ui.gd" id="1_ui"]
+
+[node name="Battle" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ui")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.14, 0.22, 1)
+
+[node name="Arena" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EnemySprite" type="ColorRect" parent="Arena"]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 60.0
+offset_right = 760.0
+offset_bottom = 180.0
+color = Color(0.3, 0.8, 0.35, 1)
+
+[node name="PlayerSprite" type="ColorRect" parent="Arena"]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 220.0
+offset_right = 280.0
+offset_bottom = 340.0
+color = Color(0.95, 0.35, 0.2, 1)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -220.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Fighters" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="PlayerBox" type="VBoxContainer" parent="Panel/VBox/Fighters"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerName" type="Label" parent="Panel/VBox/Fighters/PlayerBox"]
+layout_mode = 2
+text = "Emberpup"
+
+[node name="PlayerHP" type="Label" parent="Panel/VBox/Fighters/PlayerBox"]
+layout_mode = 2
+text = "HP 0 / 0"
+
+[node name="PlayerBar" type="ProgressBar" parent="Panel/VBox/Fighters/PlayerBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="EnemyBox" type="VBoxContainer" parent="Panel/VBox/Fighters"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemyName" type="Label" parent="Panel/VBox/Fighters/EnemyBox"]
+layout_mode = 2
+text = "Leafcub"
+horizontal_alignment = 2
+
+[node name="EnemyHP" type="Label" parent="Panel/VBox/Fighters/EnemyBox"]
+layout_mode = 2
+text = "HP 0 / 0"
+horizontal_alignment = 2
+
+[node name="EnemyBar" type="ProgressBar" parent="Panel/VBox/Fighters/EnemyBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="Log" type="Label" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Battle log"
+autowrap_mode = 3
+
+[node name="Moves" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Result" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="ReturnButton" type="Button" parent="Panel/VBox"]
+visible = false
+layout_mode = 2
+text = "Return to overworld"

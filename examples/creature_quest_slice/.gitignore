@@ -1,0 +1,8 @@
+.godot/
+*.translation
+export_presets.cfg
+# Zero-footprint inject leaves these; cleanup restores project.godot
+addons/godot_mcp_bridge/
+.import/
+*.tmp
+*~

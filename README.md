@@ -35,10 +35,14 @@ Exercised with **godot-mcp** live tools (inject → Play → tree/input/screensh
 | Godot | Build notes |
 |-------|-------------|
 | **4.6** | Stable (prior smoke / teammate workflows) |
-| **4.7** | Stable mono — Mario-style platformer smoke |
+| **4.7** | Stable mono — Mario-style platformer smoke + **Creature Quest** slice |
 | **4.8-dev1** | Dev mono — Sonic-style runner smoke |
 
 Other 4.x builds are expected to work; these three are the ones we have run end-to-end.
+
+### Example project (shippable demo)
+
+**[examples/creature_quest_slice](examples/creature_quest_slice)** — Godot **4.7** Pokémon-style vertical slice (original creatures only): top-down overworld, tall-grass encounter, turn-based 1v1 battle with type effectiveness. Open it, press Play, then use zero-footprint inject + `list_children` / `simulate_input_batch` / `call_method` as documented in that folder’s README.
 
 ### Agent tips (impressive defaults)
 
@@ -84,7 +88,7 @@ godot-mcp
 2. Install it:
 
 ```bash
-npm install -g ./godot-mcp-0.1.3.tgz
+npm install -g ./godot-mcp-0.1.4.tgz
 godot-mcp
 ```
 
@@ -161,11 +165,12 @@ See [`MVP.md`](MVP.md) for scope and [`RELEASE.md`](RELEASE.md) for release chec
 ## Project layout
 
 ```text
-bin/godot-mcp.js          # User-facing launcher
-src/index.ts               # Public MCP server (general tools)
-src/bridge/                # Zero-footprint inject + runtime port selection
-addons/godot_mcp_runtime/ # Persistent plugin + mcp_bridge.gd source
-docs/                      # Beginner guide + friend starter prompt
+bin/godot-mcp.js               # User-facing launcher
+src/index.ts                    # Public MCP server (general tools)
+src/bridge/                     # Zero-footprint inject + runtime port selection
+addons/godot_mcp_runtime/      # Persistent plugin + mcp_bridge.gd source
+docs/                           # Beginner guide + friend starter prompt
+examples/creature_quest_slice/  # Godot 4.7 vertical-slice demo
 ```
 
 ---

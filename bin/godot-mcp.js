@@ -14,9 +14,10 @@ const root = path.resolve(__dirname, '..');
 const buildEntry = path.join(root, 'build', 'index.js');
 
 function printStatus() {
-  console.error('=== godot-mcp v0.1.3 ===');
+  console.error('=== godot-mcp v0.1.4 ===');
   console.error('Live Godot control for AI agents (Grok, Claude, and other MCP hosts).');
   console.error('Tested with Godot 4.6 · 4.7 · 4.8-dev1 (mono smokes).');
+  console.error('Example: examples/creature_quest_slice (Godot 4.7).');
   console.error('');
   console.error('Ports');
   console.error('  Zero-footprint bridge (MCPBridge):  127.0.0.1:4243');
@@ -41,7 +42,7 @@ function printStatus() {
   console.error('Install (this project only — not bare registry name godot-mcp):');
   console.error('  git clone https://github.com/quinnquad/godot-mcp.git && cd godot-mcp');
   console.error('  npm install && npm run build && npm install -g .');
-  console.error('  # or: npm install -g ./godot-mcp-0.1.3.tgz  (from GitHub Releases)');
+  console.error('  # or: npm install -g ./godot-mcp-0.1.4.tgz  (from GitHub Releases)');
   console.error('');
   console.error('Register with Grok (after the install above):');
   console.error('  grok mcp add godot-mcp -- godot-mcp');
