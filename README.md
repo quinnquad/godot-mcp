@@ -28,6 +28,33 @@ Two connection modes, one auto-detecting client:
 
 Live tools **probe 4242 then 4243** (or use an in-process inject registration). You do not need a manual port flag.
 
+### Tested Godot versions
+
+Exercised with **godot-mcp** live tools (inject → Play → tree/input/screenshot) on:
+
+| Godot | Build notes |
+|-------|-------------|
+| **4.6** | Stable (prior smoke / teammate workflows) |
+| **4.7** | Stable mono — Mario-style platformer smoke |
+| **4.8-dev1** | Dev mono — Sonic-style runner smoke |
+
+Other 4.x builds are expected to work; these three are the ones we have run end-to-end.
+
+### Agent tips (impressive defaults)
+
+1. **Play must be running** — live tools fail with a clear “press Play + bridge listening” error if the game is stopped.
+2. **Discover the tree with `list_children`** (shallow, optional `max_depth` / `limit`) instead of dumping all of `get_tree` on huge scenes.
+3. **Hold movement** with `simulate_input_batch` and `hold_ms` so characters actually walk:
+
+```json
+[
+  { "type": "action", "action": "move_right", "hold_ms": 500 },
+  { "type": "action", "action": "jump", "hold_ms": 80 }
+]
+```
+
+Delays run over **physics frames** (not a blocked main thread), so `Input.get_axis` stays non-zero while `CharacterBody2D` moves.
+
 ---
 
 ## Install (5 minutes)
@@ -52,12 +79,12 @@ godot-mcp
 
 ### Option B — Release tarball
 
-1. Download `godot-mcp-0.1.2.tgz` from  
-   https://github.com/quinnquad/godot-mcp/releases/tag/v0.1.2  
+1. Download the latest `godot-mcp-*.tgz` from  
+   https://github.com/quinnquad/godot-mcp/releases  
 2. Install it:
 
 ```bash
-npm install -g ./godot-mcp-0.1.2.tgz
+npm install -g ./godot-mcp-0.1.3.tgz
 godot-mcp
 ```
 

@@ -13,11 +13,15 @@ import {
   PERSISTENT_RUNTIME_PORT,
   resolveRuntimePort,
 } from './bridge/runtime-port';
+import {
+  expandHoldSteps,
+  estimateSimulateDurationMs,
+} from './bridge/simulate-steps';
 
 const server = new Server(
   {
     name: 'godot-mcp',
-    version: '0.1.2',
+    version: '0.1.3',
   },
   {
     capabilities: {
@@ -43,14 +47,15 @@ console.error('Godot MCP server initialized (stdio mode) - general public surfac
 // Minimal TCP client helper for live runtime tools.
 // Supports persistent runtime (4242) and zero-footprint MCPBridge (4243).
 // targetPort is resolved by getTargetRuntimePort (inject map, then live probe).
-function sendRuntimeCmd(cmd: any, targetPort?: number): Promise<any> {
+// timeoutMs is raised for long non-blocking hold simulations (JOS-15).
+function sendRuntimeCmd(cmd: any, targetPort?: number, timeoutMs = 5000): Promise<any> {
   const port = targetPort ?? PERSISTENT_RUNTIME_PORT;
   return new Promise((resolve) => {
     const net = require('net');
     const client = net.createConnection({ port, host: '127.0.0.1' }, () => {
       client.write(JSON.stringify(cmd) + '\n');
     });
-    client.setTimeout(5000);
+    client.setTimeout(timeoutMs);
     let buf = '';
     client.on('data', (d: any) => {
       buf += d.toString();
@@ -68,9 +73,9 @@ function sendRuntimeCmd(cmd: any, targetPort?: number): Promise<any> {
     client.on('error', () => resolve({
       status: 'error',
       error_type: 'connection',
-      message: `Cannot connect to runtime on ${port} — press Play in Godot with MCPBridge (4243 zero-footprint) or the persistent plugin (4242) listening`,
+      message: `Cannot connect to runtime on ${port} — press Play in Godot with MCPBridge (4243 zero-footprint) or the persistent plugin (4242) listening. list_children / simulate only work while the game is running.`,
     }));
-    client.on('timeout', () => { client.end(); resolve({ status: 'error', error_type: 'timeout', message: 'runtime timeout (is Godot running with autoload?)' }); });
+    client.on('timeout', () => { client.end(); resolve({ status: 'error', error_type: 'timeout', message: 'runtime timeout (is Godot running with autoload? long hold_ms may need more time)' }); });
     client.on('close', () => { /* future retry hook */ });
   });
 }
@@ -91,7 +96,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return {
       content: [{
         type: 'text',
-        text: 'Godot MCP 0.1.2 | Public general surface | Live tools: persistent plugin on 4242, zero-footprint MCPBridge on 4243 (auto-detected)',
+        text: 'Godot MCP 0.1.3 | Public general surface | Ports 4242/4243 auto-detect | JOS-15 non-blocking hold_ms | list_children shallow discovery | Tested Godot 4.6 / 4.7 / 4.8-dev1',
       }],
     };
   }
@@ -209,8 +214,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
   // Additional general Godot tools handlers
   if (name === 'list_children') {
-    const resp = await sendRuntimeCmd({ cmd: 'list_children', ...args }, targetPort);
-    return { content: [{ type: 'text', text: JSON.stringify(resp) }] };
+    const a = (args || {}) as { node_path?: string; max_depth?: number; limit?: number };
+    const resp = await sendRuntimeCmd({
+      cmd: 'list_children',
+      node_path: a.node_path || '',
+      max_depth: a.max_depth != null ? a.max_depth : 1,
+      limit: a.limit != null ? a.limit : 200,
+    }, targetPort);
+    return { content: [{ type: 'text', text: JSON.stringify(resp, null, 2) }] };
   }
   if (name === 'get_node') {
     const resp = await sendRuntimeCmd({ cmd: 'get_node', ...args }, targetPort);
@@ -225,8 +236,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return { content: [{ type: 'text', text: JSON.stringify(resp) }] };
   }
   if (name === 'simulate_input_batch') {
-    const resp = await sendRuntimeCmd({ cmd: 'simulate_input_batch', ...args }, targetPort);
-    return { content: [{ type: 'text', text: JSON.stringify(resp) }] };
+    const a = (args || {}) as { steps?: unknown };
+    const rawSteps = Array.isArray(a.steps) ? a.steps : [];
+    const steps = expandHoldSteps(rawSteps as any);
+    const holdMs = estimateSimulateDurationMs(steps);
+    // Bridge runs holds over physics frames; keep TCP open for duration + margin
+    const timeoutMs = Math.min(120000, Math.max(8000, holdMs + 5000));
+    const resp = await sendRuntimeCmd({ cmd: 'simulate_input_batch', steps }, targetPort, timeoutMs);
+    return { content: [{ type: 'text', text: JSON.stringify(resp, null, 2) }] };
   }
   if (name === 'execute_live_script') {
     const resp = await sendRuntimeCmd({ cmd: 'execute_live_script', ...args }, targetPort);

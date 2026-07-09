@@ -10,6 +10,13 @@ var peers: Array[StreamPeerTCP] = []
 var peer_buffers := {}  # per-peer receive buffer for TCP robustness (fix fragmentation)
 const PORT := 4242
 
+# JOS-15: non-blocking simulate queue — holds leave Input pressed while physics runs
+var _sim_queue: Array = []
+var _sim_wait: float = 0.0
+var _sim_peer: StreamPeerTCP = null
+var _sim_processed: int = 0
+var _sim_busy: bool = false
+
 func _ready() -> void:
 	var err := tcp_server.listen(PORT, "127.0.0.1")
 	if err != OK:
@@ -25,6 +32,10 @@ func _process(_delta: float) -> void:
 	for i in range(peers.size() - 1, -1, -1):
 		var p: StreamPeerTCP = peers[i]
 		if p.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+			if _sim_peer == p:
+				_sim_busy = false
+				_sim_peer = null
+				_sim_queue.clear()
 			peer_buffers.erase(p)
 			peers.remove_at(i)
 			continue
@@ -44,10 +55,96 @@ func _process(_delta: float) -> void:
 				var json := JSON.new()
 				var parse_result := json.parse(line)
 				if parse_result == OK and json.data is Dictionary:
-					var resp := _handle_cmd(json.data)
-					p.put_string(JSON.stringify(resp) + "\n")
+					var cmd: Dictionary = json.data
+					var c := str(cmd.get("cmd", ""))
+					if c == "simulate_input_batch":
+						_begin_simulate(cmd, p)
+					else:
+						var resp := _handle_cmd(cmd)
+						p.put_string(JSON.stringify(resp) + "\n")
 				else:
 					p.put_string(JSON.stringify({"status": "error", "message": "invalid json"}) + "\n")
+
+func _physics_process(delta: float) -> void:
+	if not _sim_busy:
+		return
+	if _sim_wait > 0.0:
+		_sim_wait = maxf(0.0, _sim_wait - delta)
+		if _sim_wait > 0.0:
+			return
+	_drain_sim_queue()
+
+func _begin_simulate(cmd: Dictionary, peer: StreamPeerTCP) -> void:
+	if _sim_busy:
+		peer.put_string(JSON.stringify({
+			"status": "error",
+			"message": "simulate_input_batch already running — wait for the previous hold to finish"
+		}) + "\n")
+		return
+	var steps = cmd.get("steps", [])
+	if typeof(steps) != TYPE_ARRAY:
+		peer.put_string(JSON.stringify({"status": "error", "message": "steps must be an array"}) + "\n")
+		return
+	_sim_queue = _expand_hold_steps(steps)
+	_sim_peer = peer
+	_sim_processed = 0
+	_sim_wait = 0.0
+	_sim_busy = true
+	_drain_sim_queue()
+
+func _expand_hold_steps(steps: Array) -> Array:
+	var out: Array = []
+	for s in steps:
+		if typeof(s) != TYPE_DICTIONARY:
+			continue
+		var typ := str(s.get("type", ""))
+		var hold := float(s.get("hold_ms", 0))
+		if typ == "action" and hold > 0.0 and str(s.get("action", "")) != "":
+			var act := str(s.get("action", ""))
+			out.append({"type": "action", "action": act, "press": true})
+			out.append({"type": "delay", "ms": hold})
+			out.append({"type": "action", "action": act, "press": false})
+		else:
+			out.append(s)
+	return out
+
+func _drain_sim_queue() -> void:
+	while _sim_queue.size() > 0:
+		var s: Dictionary = _sim_queue.pop_front()
+		var typ := str(s.get("type", ""))
+		if typ == "action":
+			var act := str(s.get("action", ""))
+			var press := bool(s.get("press", true))
+			if act != "":
+				if press:
+					Input.action_press(act)
+				else:
+					Input.action_release(act)
+			_sim_processed += 1
+		elif typ == "delay" or typ == "wait":
+			var ms := float(s.get("ms", 0))
+			_sim_processed += 1
+			if ms > 0.0:
+				_sim_wait = ms / 1000.0
+				return
+		elif typ == "mouse_move":
+			var ppos = s.get("pos", [0, 0])
+			if typeof(ppos) == TYPE_ARRAY and ppos.size() >= 2:
+				Input.warp_mouse(Vector2(float(ppos[0]), float(ppos[1])))
+			_sim_processed += 1
+		else:
+			_sim_processed += 1
+	if _sim_peer != null and _sim_peer.get_status() == StreamPeerTCP.STATUS_CONNECTED:
+		_sim_peer.put_string(JSON.stringify({
+			"status": "ok",
+			"processed": _sim_processed,
+			"mode": "non_blocking_hold",
+			"note": "delays/hold_ms advance over physics frames so Input stays held while CharacterBody2D moves"
+		}) + "\n")
+	_sim_busy = false
+	_sim_peer = null
+	_sim_queue.clear()
+	_sim_wait = 0.0
 
 func _handle_cmd(cmd: Dictionary) -> Dictionary:
 	var c := str(cmd.get("cmd", ""))
@@ -85,13 +182,33 @@ func _handle_cmd(cmd: Dictionary) -> Dictionary:
 			return {"status": "error", "message": "node or property not found"}
 		"list_children":
 			var node_path := str(cmd.get("node_path", ""))
+			if node_path == "":
+				return {
+					"status": "error",
+					"message": "node_path required. Prefer list_children (shallow) over get_tree on large scenes. Game must be in Play with bridge listening."
+				}
 			var node := get_tree().get_root().get_node_or_null(node_path)
-			if node:
-				var children := []
-				for child in node.get_children():
-					children.append({"name": child.name, "path": child.get_path(), "type": child.get_class()})
-				return {"status": "ok", "children": children}
-			return {"status": "error", "message": "node not found"}
+			if node == null:
+				return {
+					"status": "error",
+					"message": "node not found: %s — check the path, and ensure the game is in Play with the MCP bridge listening (4243 zero-footprint or 4242 persistent)" % node_path
+				}
+			var max_depth := int(cmd.get("max_depth", 1))
+			if max_depth < 1:
+				max_depth = 1
+			var limit := int(cmd.get("limit", 200))
+			if limit < 1:
+				limit = 1
+			var children: Array = []
+			_collect_children_list(node, children, 1, max_depth, limit)
+			return {
+				"status": "ok",
+				"children": children,
+				"count": children.size(),
+				"truncated": children.size() >= limit,
+				"max_depth": max_depth,
+				"note": "Shallow by default (max_depth=1). Prefer this over get_tree on large scenes."
+			}
 		"get_node":
 			var node_path := str(cmd.get("node_path", ""))
 			var node := get_tree().get_root().get_node_or_null(node_path)
@@ -318,21 +435,7 @@ func _handle_cmd(cmd: Dictionary) -> Dictionary:
 			var path := "user://mcp_screenshot.png"
 			img.save_png(path)
 			return {"status": "ok", "path": path, "width": img.get_width(), "height": img.get_height()}
-		"simulate_input_batch":
-			var steps := cmd.get("steps", [])
-			for s in steps:
-				var typ := str(s.get("type", ""))
-				if typ == "action":
-					var act := str(s.get("action", ""))
-					var press := bool(s.get("press", true))
-					if press: Input.action_press(act)
-					else: Input.action_release(act)
-				elif typ == "delay":
-					OS.delay_msec(int(s.get("ms", 10)))
-				elif typ == "mouse_move":
-					var p := s.get("pos", [0,0])
-					Input.warp_mouse(Vector2(p[0], p[1]))
-			return {"status": "ok", "processed": steps.size()}
+		# simulate_input_batch is handled async in _process/_physics_process (JOS-15)
 		# === Input Map (for creating controllable characters) ===
 		"list_input_actions":
 			var actions := []
@@ -539,6 +642,22 @@ func _physics_process(delta: float) -> void:
 
 		_:
 			return {"status": "error", "message": "unknown cmd: " + c}
+
+func _collect_children_list(node: Node, out: Array, depth: int, max_depth: int, limit: int) -> void:
+	if out.size() >= limit or depth > max_depth:
+		return
+	for child in node.get_children():
+		if out.size() >= limit:
+			return
+		out.append({
+			"name": child.name,
+			"path": str(child.get_path()),
+			"type": child.get_class(),
+			"depth": depth
+		})
+		if depth < max_depth:
+			_collect_children_list(child, out, depth + 1, max_depth, limit)
+
 
 func _dump_tree(node: Node) -> Dictionary:
 	var d := {
