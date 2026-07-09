@@ -34,10 +34,31 @@ Live tools **probe 4242 then 4243** (or use an in-process inject registration). 
 
 **Requirements:** Node.js 18+, Godot 4, and an MCP host (Grok Build, Claude Desktop, etc.).
 
+> **Important:** Do **not** run bare `npm install -g godot-mcp` from the public npm registry.
+> That name is currently an unrelated third-party package, not this project.
+> Install from **this GitHub repo** or a **GitHub Release tarball** only.
+
+### Option A — Clone (recommended)
+
 ```bash
-npm install -g godot-mcp
+git clone https://github.com/quinnquad/godot-mcp.git
+cd godot-mcp
+npm install
+npm run build
+npm install -g .
 godot-mcp
 # Launcher prints status on stderr, then runs the MCP server on stdio.
+```
+
+### Option B — Release tarball
+
+1. Download `godot-mcp-0.1.2.tgz` from  
+   https://github.com/quinnquad/godot-mcp/releases/tag/v0.1.2  
+2. Install it:
+
+```bash
+npm install -g ./godot-mcp-0.1.2.tgz
+godot-mcp
 ```
 
 ### Register with Grok
@@ -68,7 +89,7 @@ In the Grok TUI: `/mcps` or `Ctrl+L` → enable **godot-mcp**.
 }
 ```
 
-**Windows PATH:** After global install, reopen the terminal (or refresh PATH). Prefer the bare command `godot-mcp` — Grok resolves npm’s `.cmd` shim on Windows in most setups. If `grok` itself is missing, add `%USERPROFILE%\.grok\bin` to PATH for that shell.
+**Windows PATH:** After global install, reopen the terminal (or refresh PATH). Prefer the bare command `godot-mcp` — Grok resolves npm’s `.cmd` shim on Windows in most setups. If `grok` itself is missing, add your Grok install’s `bin` directory to PATH for that shell (often under the user profile `.grok` folder).
 
 ---
 
@@ -129,7 +150,7 @@ git clone https://github.com/quinnquad/godot-mcp.git
 cd godot-mcp
 npm install
 npm run build
-npm test                  # JOS-17 style port selection tests
+npm test                  # runtime port selection tests
 node build/index.js       # Public surface on stdio
 ```
 
@@ -137,8 +158,8 @@ node build/index.js       # Public surface on stdio
 
 ## License
 
-MIT — see repository license file if present; otherwise MIT as declared in `package.json`.
+MIT — as declared in `package.json`.
 
 ## Contributing
 
-Improvements to general tools, zero-footprint reliability, docs, and the launcher are welcome via pull request. Keep the public surface free of private game IP and personal machine paths.
+Improvements to general tools, zero-footprint reliability, docs, and the launcher are welcome via pull request. Keep the public surface free of private game-specific tools and personal machine paths.

@@ -1,72 +1,54 @@
 # godot-mcp Release Process (public MVP)
 
-Current public version target: **0.1.2** (JOS-17 port auto-detect: live tools reach 4243 without in-process inject).
+Current public version: **0.1.2** (runtime port auto-detect: live tools reach 4243 without in-process inject).
 
-This is the repeatable process for producing a consumable v0.1 release so that strangers can install and use the tool (and so the community can start iterating on the general/ public slice).
+Repeatable process for a consumable public release so strangers can install from GitHub.
 
-**Hard constraint (from user review)**: The public release must contain **zero** Elderglow-specific content, tools, references, or branding. All public artifacts (package, README, docs that ship, launcher output, starter prompts, template projects, release notes) must be purely general Godot + zero-footprint.
+**Hard constraint**: Public artifacts must contain **zero** private game-specific tools, domain branding, or personal machine paths. Ship only general Godot + zero-footprint.
 
-## Pre-Release Checklist (Run Every Time)
+## Pre-Release Checklist
 
-1. **Full Elderglow audit**
-   - `grep -r Elderglow --include="*.md" --include="package.json" --include="*.js" .` (exclude node_modules, .git, any private docs you don't intend to ship).
-   - Confirm zero hits in anything that will be in the published tarball, release zips, or linked from the public README.
-   - Fix any that remain (especially user-visible strings in the bin/ launcher or tool responses).
+1. **Private-content audit**
+   - Search the tree for private domain tool names and game brand strings.
+   - Confirm zero hits in the npm tarball, release assets, and linked public docs.
 
 2. **Path audit**
-   - No hard-coded personal machine paths (absolute home directories, local drive roots) in README, docs, package.json, bin/ output, starter prompts, or template files.
+   - No hard-coded personal machine paths (absolute home directories, local drive roots) in README, docs, package.json, bin/ output, starter prompts, bridge defaults, or tests.
 
 3. **Build**
    - `npm run build`
-   - Confirm `build/index.js` and the bin/ launcher are up to date.
+   - Confirm `build/index.js` and `bin/godot-mcp.js` are current.
 
-4. **Template / example**
-   - The `newclean` example (or its generalized equivalent) + `GODOT_MCP_NOTES.md` + `create_persistent_player.gd` + `player.gd` + the baked `test.tscn` is the canonical "starter platformer" template.
-   - Make sure the template has a clean .gitignore and no personal notes.
+4. **Docs**
+   - Primary user docs: root README, `MVP.md`, `docs/friend-starter-prompt.md`, `docs/getting-started-for-beginners.md`.
+   - Path-agnostic and beginner-friendly.
+   - Ports: zero-footprint **4243**, persistent **4242**, auto-detect documented.
+   - Install hero must **not** be bare `npm install -g godot-mcp` until this project owns that registry name — use clone or release tarball.
 
-5. **Docs**
-   - Root README, `MVP.md`, `docs/friend-starter-prompt.md`, `docs/getting-started-for-beginners.md` are the primary user-facing docs.
-   - They must be path-agnostic and beginner-friendly.
-   - Technical docs (ARCHITECTURE etc.) may stay more detailed but should not be the first thing a beginner sees, and any Elderglow content must be clearly labeled as "future/private extension".
-   - Confirm the robustness lessons (mandatory Play + watch Godot Output, re-inject after Play/server, Windows PATH/wrapper/quoting tips, generic Post-Setup Smoke Checklist, "Extending with your own domain / game-specific tools" recipe) have been added to the public docs in generalized form (no Elderglow/leyline names, no private URLs, placeholders only). Re-affirm the full Elderglow-free gate for all public artifacts.
-
-6. **Version**
-   - Bump version in package.json (semver, starting from 0.1.0 for this MVP).
+5. **Version**
+   - Bump semver in `package.json`.
 
 ## Release Steps
 
-1. Commit the above changes with a clear message ("chore(release): vX.Y.Z MVP — general Godot + zero-footprint, Elderglow-free public surface").
-
-2. Tag: `git tag v0.1.0` (or the current version).
-
+1. Commit with a clear message (e.g. `chore(release): vX.Y.Z public surface`).
+2. Tag: `git tag vX.Y.Z` and push the tag.
 3. Build + pack:
    - `npm run build`
-   - `npm pack` (produces the tarball).
+   - `npm test`
+   - `npm pack`
+4. GitHub Release from the tag; attach the tarball + optional `addons/godot_mcp_runtime` zip.
+5. Optional: `npm publish` only after the package name on the registry is owned by this project.
 
-4. GitHub Release (recommended for v0.1):
-   - Create a release from the tag.
-   - Attach:
-     - The npm tarball from `npm pack`.
-     - A zip of the `addons/godot_mcp_runtime/` folder (for the persistent plugin).
-     - A zip of the starter template project (the generalized newclean structure + NOTES + baker).
-     - Optional: a CHANGELOG entry for this version.
-   - In the release body, include the copy-paste registration instructions (see below).
+## Registration snippets (after local install)
 
-5. Publish (optional but nice for discoverability):
-   - `npm publish` (after the above).
-
-## Registration Snippets (copy-paste for users after install)
-
-After `npm install -g godot-mcp` (or equivalent), the `godot-mcp` command is available.
-
-**For Grok (example — the launcher will print the exact current form):**
-```
+```bash
+# After: git clone … && npm install && npm run build && npm install -g .
 grok mcp add godot-mcp -- godot-mcp
+grok mcp doctor godot-mcp
 ```
-(For a team: `grok mcp add --scope project godot-mcp -- godot-mcp` to write a committed `.grok/config.toml`.)
-Also run `grok mcp doctor godot-mcp` and use `/mcps` in the TUI.
 
-**For Claude Desktop (claude_desktop_config.json example):**
+Claude Desktop:
+
 ```json
 {
   "mcpServers": {
@@ -78,18 +60,11 @@ Also run `grok mcp doctor godot-mcp` and use `/mcps` in the TUI.
 }
 ```
 
-(Adjust if using the direct node path to the installed build/index.js.)
+## Ports reminder
 
-## Post-Release
+| Mode | Port |
+|------|------|
+| Zero-footprint `MCPBridge` | 4243 |
+| Persistent plugin | 4242 |
 
-- Update the root README "Current version" or "Install" section if it has a pinned version.
-- Announce (wherever this is being shared) with a link to the release + the friend-starter prompt.
-- The community can now clone, fork, improve the general tools, the launcher, the docs, the bridge, the template, etc.
-
-## Notes for v0.1
-
-- The process is intentionally manual/small so we can ship the first usable thing quickly.
-- Future versions can add GitHub Actions for automated build + attach, more platforms, etc.
-- Always re-run the full Elderglow + path audit before producing artifacts.
-
-This process + the artifacts it produces (tarballs, zips, updated docs) is what lets people start using and iterating without needing the original author in the room.
+Live tools probe 4242 then 4243 (or use an in-process inject port).
