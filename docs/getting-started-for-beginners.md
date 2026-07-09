@@ -25,9 +25,20 @@ This is called the **zero-footprint** workflow.
 - Use the standard version (not the .NET one unless you know you need it).
 
 ### 1.2 Get the Godot MCP Tools Working in Grok
-Follow the installation instructions in the main README or the package you were given:
-- Usually something like `npm install -g godot-mcp` (or the equivalent for your setup).
-- Then register it with your agent (the launcher or docs will print the exact `grok mcp add ...` or Claude Desktop JSON).
+Follow the **main README** install steps (clone this repo or use a GitHub Release tarball). Summary:
+
+```bash
+git clone https://github.com/quinnquad/godot-mcp.git
+cd godot-mcp
+npm install && npm run build
+npm install -g .
+```
+
+Or download `godot-mcp-*.tgz` from the [Releases](https://github.com/quinnquad/godot-mcp/releases) page and run `npm install -g ./godot-mcp-*.tgz`.
+
+> **Do not** run bare `npm install -g godot-mcp` from the public npm registry — that name is currently a different package, not this project.
+
+Then register it with your agent (the launcher prints the exact `grok mcp add ...` command, or use the Claude Desktop JSON from the README).
 
 Once it's set up, every time you open a new Grok chat with the MCP enabled, you should see tools related to Godot.
 
@@ -37,7 +48,7 @@ Once it's set up, every time you open a new Grok chat with the MCP enabled, you 
 - Name it something like `MyFirstGame-Experiments`.
 
 ### 1.4 Windows / PATH tips (PowerShell + registration)
-After global `npm install -g godot-mcp`, fully close and reopen your terminal / Grok session (or explicitly refresh PATH in the current PowerShell):
+After `npm install -g .` (from a clone) or `npm install -g ./godot-mcp-*.tgz` (from a Release), fully close and reopen your terminal / Grok session (or explicitly refresh PATH in the current PowerShell):
 
 ```
 $env:Path = "C:\Program Files\nodejs;" + [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -190,9 +201,9 @@ These Grok Build features make godot-mcp much easier to support and use:
   - Press `r` to refresh after editing config.
   - Add or remove servers.
 - Logs: Grok captures server stderr to `~/.grok/logs/mcp/godot-mcp.stderr.log` (and .jsonl etc.). Tail it when investigating startup or protocol issues.
-- Project scope: Put a `.grok/config.toml` in your Godot game repository root (or subdir) with the mcp entry. Commit it. Teammates get the server configured automatically (they still need the `godot-mcp` launcher in their PATH via `npm install -g`).
+- Project scope: Put a `.grok/config.toml` in your Godot game repository root (or subdir) with the mcp entry. Commit it. Teammates get the server configured automatically (they still need the `godot-mcp` launcher on PATH via `npm install -g .` from a clone, or install of a Release tarball — not bare registry `godot-mcp`).
 
-Example minimal project-scoped entry (bare name works after global install + PATH refresh):
+Example minimal project-scoped entry (bare name works after local global install + PATH refresh):
 
 ```toml
 [mcp_servers.godot-mcp]

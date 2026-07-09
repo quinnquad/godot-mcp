@@ -16,7 +16,7 @@ The hero experience: from a completely clean Godot 4 2D project → one or two c
   - `execute_live_script` (arbitrary GDScript with full SceneTree access, safely scheduled + deferred).
   - All the standard general tools (get_tree, get/set properties, node lifecycle, signals, animation, UI, physics raycast, debug, resources, introspection, etc.).
 - The hardened `mcp_bridge.gd` (the file that gets injected or used by the persistent plugin) containing the reliable implementations.
-- A cross-platform `godot-mcp` launcher (after `npm install -g` or equivalent) that starts the server and prints clear status + next steps.
+- A cross-platform `godot-mcp` launcher (after install from this GitHub repo or a Release tarball) that starts the server and prints clear status + next steps.
 - Clean, beginner-first, path-agnostic documentation + the polished friend-starter prompt.
 - A ready-to-use minimal "starter platformer" template project (already containing a baked controllable player + floor + camera so the first Play feels magical).
 - Persistence story: changes made via the agent can be baked into the user's local scene files (so they survive stopping Play) using the provided patterns / helper.
@@ -43,8 +43,8 @@ The hero experience: from a completely clean Godot 4 2D project → one or two c
 (See the polished docs/getting-started-for-beginners.md and friend-starter-prompt.md for the exact copy-paste experience.)
 
 Rough flow:
-1. `npm install -g godot-mcp` (or equivalent one-line).
-2. `grok mcp add godot-mcp` (or the equivalent for their client) — the launcher prints the exact command.
+1. Install from **this repo** (`git clone` → `npm install && npm run build && npm install -g .`) or a **GitHub Release tarball** (`npm install -g ./godot-mcp-*.tgz`). Do **not** use bare `npm install -g godot-mcp` from the public registry (unrelated package).
+2. `grok mcp add godot-mcp -- godot-mcp` (or the equivalent for their client) — the launcher prints the exact command.
 3. Create/open a clean Godot 4 2D project (or use the provided starter template).
 4. Open a fresh Grok chat (MCP enabled), paste the starter prompt (pointing at their clean project path).
 5. Follow the (very small) steps. Grok will tell them when to run the inject (if using zero-footprint), when to open the project and press Play, etc.

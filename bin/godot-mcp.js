@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Cross-platform launcher for godot-mcp.
- * After `npm install -g godot-mcp`, run `godot-mcp` to start the MCP server.
+ * After install from this repo (`npm install -g .`) or a GitHub Release tarball
+ * (`npm install -g ./godot-mcp-*.tgz`), run `godot-mcp` to start the MCP server.
+ * Do not use bare `npm install -g godot-mcp` from the public registry (different package).
  */
 
 const fs = require('fs');
@@ -30,7 +32,12 @@ function printStatus() {
   console.error('  Copy addons/godot_mcp_runtime/ into your project, enable the plugin, Play.');
   console.error('  Tools use port 4242 while the game is running.');
   console.error('');
-  console.error('Register with Grok (after npm install -g godot-mcp)');
+  console.error('Install (this project only — not bare registry name godot-mcp):');
+  console.error('  git clone https://github.com/quinnquad/godot-mcp.git && cd godot-mcp');
+  console.error('  npm install && npm run build && npm install -g .');
+  console.error('  # or: npm install -g ./godot-mcp-0.1.2.tgz  (from GitHub Releases)');
+  console.error('');
+  console.error('Register with Grok (after the install above):');
   console.error('  grok mcp add godot-mcp -- godot-mcp');
   console.error('  grok mcp add --scope project godot-mcp -- godot-mcp');
   console.error('  grok mcp doctor godot-mcp');
