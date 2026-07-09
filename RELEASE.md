@@ -1,4 +1,6 @@
-# godot-mcp v0.1 Release Process (MVP)
+# godot-mcp Release Process (public MVP)
+
+Current public version target: **0.1.2** (JOS-17 port auto-detect: live tools reach 4243 without in-process inject).
 
 This is the repeatable process for producing a consumable v0.1 release so that strangers can install and use the tool (and so the community can start iterating on the general/ public slice).
 
@@ -12,7 +14,7 @@ This is the repeatable process for producing a consumable v0.1 release so that s
    - Fix any that remain (especially user-visible strings in the bin/ launcher or tool responses).
 
 2. **Path audit**
-   - No hard-coded personal paths (I:\ etc.) in README, docs, package.json, bin/ output, starter prompts, or template files.
+   - No hard-coded personal machine paths (absolute home directories, local drive roots) in README, docs, package.json, bin/ output, starter prompts, or template files.
 
 3. **Build**
    - `npm run build`
@@ -59,8 +61,10 @@ After `npm install -g godot-mcp` (or equivalent), the `godot-mcp` command is ava
 
 **For Grok (example — the launcher will print the exact current form):**
 ```
-grok mcp add godot-mcp --command godot-mcp
+grok mcp add godot-mcp -- godot-mcp
 ```
+(For a team: `grok mcp add --scope project godot-mcp -- godot-mcp` to write a committed `.grok/config.toml`.)
+Also run `grok mcp doctor godot-mcp` and use `/mcps` in the TUI.
 
 **For Claude Desktop (claude_desktop_config.json example):**
 ```json

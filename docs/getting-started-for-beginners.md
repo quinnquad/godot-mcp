@@ -36,29 +36,24 @@ Once it's set up, every time you open a new Grok chat with the MCP enabled, you 
 - **Important**: Work in a *copy* of any important project. Never use your only copy.
 - Name it something like `MyFirstGame-Experiments`.
 
-### 1.4 Windows / PATH / quoting tips (PowerShell + registration)
+### 1.4 Windows / PATH tips (PowerShell + registration)
 After global `npm install -g godot-mcp`, fully close and reopen your terminal / Grok session (or explicitly refresh PATH in the current PowerShell):
 
 ```
 $env:Path = "C:\Program Files\nodejs;" + [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 ```
 
-For `grok mcp add` (or equivalent) when the path has spaces or quoting is painful on Windows, create a tiny wrapper `.cmd` next to your install/clone (use generic placeholders):
+Grok now auto-resolves bare launcher names like `godot-mcp` (npm's .cmd shim) on Windows for most cases, so the simple registration often works:
 
 ```
-@echo off
-setlocal
-set "NODE_DIR=%ProgramFiles%\nodejs"
-for /f "delims=" %%i in ('where node 2^>nul') do (set "NODE_DIR=%%~dpi" & goto :found)
-:found
-if not exist "%NODE_DIR%\node.exe" set "NODE_DIR=%ProgramFiles%\nodejs"
-"%NODE_DIR%\node.exe" "C:\full\path\to\your\godot-mcp\build\index.js" %*
-endlocal
+grok mcp add godot-mcp -- godot-mcp
 ```
 
-Then register with `--command "C:\path\to\your\wrapper.cmd"` (or the equivalent for the installed global location). Use `cmd /c "npm ..."` if .ps1 execution policy blocks direct npm in PowerShell.
+(Team/shared project: add `--scope project` to write a `.grok/config.toml` that can be committed in your Godot repo.)
 
-Always test registration in a fresh chat with the server enabled/selected.
+A small `.cmd` wrapper is still a robust option if you have quoting issues, multiple Node installs, or need a fixed path (see older template in git history or create one that auto-detects node + points at the build/index.js or the global shim). Use `cmd /c "npm ..."` if PowerShell execution policy blocks npm.
+
+Always test registration in a fresh chat with the server enabled/selected. Run `grok mcp doctor godot-mcp` to verify.
 
 ---
 
@@ -80,7 +75,7 @@ We are using the zero-footprint Godot MCP setup. This means you can temporarily 
 
 Please guide me step by step. Start by:
 1. Making sure the zero-footprint bridge is injected into my project.
-2. Asking me to open the project in Godot and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or persistent equivalent). If missing, tools fail to connect. Re-inject after fresh Play/server if needed.
+2. Asking me to open the project in Godot and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4243". (Persistent plugin mode uses 4242 instead.) If missing, tools fail to connect. Re-inject after a fresh MCP process if needed.
 3. Then walking me through creating a basic player that can move left/right and jump.
 
 Explain things simply. Give me one small task at a time. After each step, ask me to test it in Godot and tell you what happened (or take a screenshot if needed).
@@ -97,7 +92,7 @@ A typical loop with Grok will look like this:
 1. You tell Grok what you want to build next.
 2. Grok may ask you to inject the bridge (if it's not already active).
 3. You open your Godot project and press **Play** (F5 or the Play button). The bridge only starts listening while the game is actually running.
-4. Watch the Godot Output panel (bottom of the editor) for a message like "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or the persistent equivalent on 4242). If you don't see it, tools will time out or say "cannot connect".
+4. Watch the Godot Output panel (bottom of the editor) for: `[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4243`. Persistent mode shows the runtime on **4242** instead. If you don't see a bridge/runtime line, tools will time out or say "cannot connect".
 5. Grok uses tools to look at your game (takes screenshots, inspects nodes, runs small pieces of code, etc.).
 6. Grok tells you exactly what to do in the Godot editor (create nodes, attach scripts, change properties, etc.).
 7. You do the small steps Grok gives you.
@@ -182,3 +177,30 @@ Example skeleton (generic):
 ```
 
 The agent can also drive everything via `execute_live_script` + the other general powers (screenshot, input sim, tree inspection) without any custom tool registration.
+
+## Troubleshooting & Management (New Grok MCP Features)
+These Grok Build features make godot-mcp much easier to support and use:
+
+- `grok mcp doctor godot-mcp` — checks that the command is found and resolved, that the server starts and handshakes (protocol 2024-11-05), and reports the exact number of tools (42 for the public set). Use this first when things feel broken.
+- `grok mcp list` (or `grok mcp list --json`) — shows all configured servers and their scopes.
+- `/mcps` (or Ctrl+L then switch to the MCP Servers tab) — in the interactive TUI you can:
+  - See if godot-mcp is enabled and how many tools it exposes.
+  - Press Space to toggle it on/off live.
+  - Expand to browse the actual tool list.
+  - Press `r` to refresh after editing config.
+  - Add or remove servers.
+- Logs: Grok captures server stderr to `~/.grok/logs/mcp/godot-mcp.stderr.log` (and .jsonl etc.). Tail it when investigating startup or protocol issues.
+- Project scope: Put a `.grok/config.toml` in your Godot game repository root (or subdir) with the mcp entry. Commit it. Teammates get the server configured automatically (they still need the `godot-mcp` launcher in their PATH via `npm install -g`).
+
+Example minimal project-scoped entry (bare name works after global install + PATH refresh):
+
+```toml
+[mcp_servers.godot-mcp]
+command = "godot-mcp"
+args = []
+enabled = true
+```
+
+Grok walks up to the git root for `.grok/config.toml` files and merges with user config (project wins for same name).
+
+If you have many MCP servers, the built-in `search_tool` and `use_tool` let the agent discover and call godot-mcp tools dynamically (fully-qualified names are `godot-mcp__create_simple_player` etc.).

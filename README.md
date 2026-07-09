@@ -1,113 +1,144 @@
 # godot-mcp
 
-Control Godot from Grok (and other agents) with **almost no setup** and **zero script editing** on your part.
+**Control a running Godot 4 game from Grok, Claude, or any MCP-compatible agent** — without hand-editing scripts for every experiment.
 
-The zero-footprint workflow lets an AI temporarily connect to your running Godot game on a completely clean project, take screenshots, run live code, simulate input, create and modify nodes, etc. — without permanently polluting your project.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 
-When you're happy with something, the AI (or the provided helpers) can bake the results into your local `.tscn` and `.gd` files so they persist after you stop Play.
-
-## The Hero Experience (What Most People Want First)
-
-1. Clean Godot 4 2D project.
-2. One or two commands to get the MCP side working.
-3. Paste a starter prompt into a fresh Grok chat.
-4. Grok creates a real keyboard-controllable CharacterBody2D platformer (with coyote time, jump cut, proper acceleration/friction) + basic level.
-5. The character is baked into your local scene files and survives stopping Play.
-6. You keep iterating live (screenshots, live tweaks, input simulation) while the game runs.
-7. Easy cleanup when you want the project clean again.
-
-This is deliberately designed so a non-technical friend (or a fresh Grok session) can have a productive time without you editing any scripts.
-
-## Quick Start (Zero-Footprint — Recommended for Clean Projects)
-
-See the full beginner guide: `docs/getting-started-for-beginners.md`
-
-See the exact "paste this into a brand new chat" prompt for a friend or yourself: `docs/friend-starter-prompt.md`
-
-**High-level**:
-- Install the server (e.g. `npm install -g godot-mcp` or the equivalent for your setup).
-- Register it with your agent (`grok mcp add ...` or the Claude Desktop equivalent — the launcher will print the exact command).
-- Create/open a clean Godot 4 project (or use the provided starter template that already has a baked controllable player).
-- Open a fresh chat, paste the starter prompt (pointing at your clean project path).
-- Follow the tiny steps Grok gives you. It will tell you exactly when to inject (if needed) and when to open Godot + press Play.
-
-After the agent says it has injected (or you ran `inject_zero_footprint_bridge`), open the Godot project in the editor and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel (bottom of the editor) for a message like "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or the persistent equivalent). If you don't see it, runtime tools will time out or say "cannot connect".
-
-If tools fail after the first Play: ask the agent to re-run the inject (zero-footprint bridge state is per-process; a fresh server or fresh Play often needs a re-inject).
-
-The first time you Play after the AI works, you should have a real controllable character.
-
-**Windows / PATH / quoting note**: After `npm install -g godot-mcp`, reopen terminal or refresh PATH explicitly (`$env:Path = "C:\Program Files\nodejs;" + [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`). For quoting issues with `grok mcp add`, use a small .cmd wrapper (see getting-started-for-beginners.md for the generic template using %ProgramFiles% + where node fallback). Use `cmd /c "npm ..."` for execution policy. Always test in a fresh chat.
-
-## Two Modes
-
-- **Zero-Footprint (the easy/clean one)**: Temporary bridge injected only when needed. Perfect for testing, friends, or anyone who hates committing addons. This is the primary mode highlighted for beginners.
-- **Persistent (power users)**: One-click plugin (`addons/godot_mcp_runtime`) + autoload. Always on while your game is running. Good for deep daily work inside a long-lived project.
-
-Both are supported. The docs default to zero-footprint for the lowest friction.
-
-## Key Superpowers (Why This Feels Magical)
-
-- `create_simple_player` — high-level helper that gives you a real platformer (or top-down) CharacterBody2D with coyote time, variable jump, proper accel/friction, and optional sprite. Works great via zero-footprint.
-- Full runtime input action management — add the exact actions your player needs at runtime so simulation and keyboard control just work.
-- `simulate_input_batch` — drive the character (or UI) from the agent.
-- `capture_screenshot` — the agent can actually *see* your game.
-- `execute_live_script` — run arbitrary GDScript safely inside the live scene (with proper deferred scheduling so it doesn't block the bridge).
-- All the usual Godot power tools (tree inspection, properties, node lifecycle, signals, animation, raycasts, etc.) plus complex type support.
-
-## Persistence (Changes That Survive Play Stop)
-
-Runtime changes (nodes created while the game is running) are normally ephemeral.
-
-This project includes a simple, reliable "bake" story:
-- The AI (or you via the provided `create_persistent_player.gd` helper) can serialize the current useful state into your local `.tscn` + supporting `.gd` files.
-- After baking, the player + level exist in the editor and survive stopping/ restarting Play.
-- You can keep using the live tools to iterate, then bake again.
-
-See the starter template and the friend prompt for the exact workflow.
-
-## Cleanup
-
-Zero-footprint injections are designed to be temporary. Use the `cleanup_zero_footprint_bridge` tool (or the equivalent command the agent will give you) when you're done experimenting on a clean project. Your project.godot and addons folder go back to their previous state.
-
-## For Complete Beginners / Giving This to a Friend
-
-Start here: `docs/getting-started-for-beginners.md`
-
-Exact paste-in prompt for a fresh Grok chat: `docs/friend-starter-prompt.md`
-
-The experience is deliberately written so the human does almost no technical work — Grok drives using the tools, you just do the tiny Godot editor steps it tells you (or let it do even more via live execution + bake).
-
-## Installation & Registration Details
-
-See the full docs for the current one-line / copy-paste instructions for your agent host.
-
-After installation you will have a `godot-mcp` command (or equivalent) that starts the server and prints the exact registration command + status for both modes.
-
-## Project Structure (for contributors / the curious)
-
-- `src/` — TypeScript MCP server.
-- `bin/` — the user-facing launcher (cross-platform).
-- `addons/godot_mcp_runtime/` — the persistent plugin (copy this folder into a Godot project and enable it in Plugins for always-on 4242 mode).
-- The zero-footprint path copies `mcp_bridge.gd` (the actual bridge that runs inside Godot) on demand.
-- `docs/` — beginner guides + the friend handoff prompt (these are the most important user-facing docs).
-
-## Contributing & Iterating
-
-This MVP is intentionally small so that other people (and the community) can start using it and making it better.
-
-See the plan (in the development session) and the `MVP.md` for the current scope and what "minimum but high ease-of-use" means.
-
-Improvements to the general Godot tools, the zero-footprint experience, the launcher, docs, or the starter template are all very welcome.
-
-## License
-
-MIT (see package.json).
+Repository: **https://github.com/quinnquad/godot-mcp**
 
 ---
 
-**This is the v0.1 public/general surface.** The goal is a reliable, low-friction way for anyone to have an AI that can truly help build and test inside Godot — especially on clean projects — without the human having to become a bridge expert or edit scripts by hand.
+## What you get
 
-See `MVP.md` for the exact definition of what ships (and what explicitly does *not* ship) in this minimum release.
+| Capability | Tool examples |
+|------------|----------------|
+| Temporary bridge on a clean project | `inject_zero_footprint_bridge`, `cleanup_zero_footprint_bridge` |
+| Controllable player helper | `create_simple_player` (platformer / top-down, coyote time, jump cut) |
+| Live inspection | `get_tree`, `list_children`, `get_all_properties`, `capture_screenshot` |
+| Drive the game | `add_input_action`, `simulate_input_batch` |
+| Live GDScript | `execute_live_script` |
 
-Start with the beginner docs or the friend prompt. Have fun building.
+Two connection modes, one auto-detecting client:
+
+| Mode | Godot side | Port | When to use |
+|------|------------|------|-------------|
+| **Zero-footprint** (recommended) | Temporary `MCPBridge` autoload | **4243** | Clean projects, demos, friends |
+| **Persistent** | Plugin `addons/godot_mcp_runtime` | **4242** | Daily work in a long-lived project |
+
+Live tools **probe 4242 then 4243** (or use an in-process inject registration). You do not need a manual port flag.
+
+---
+
+## Install (5 minutes)
+
+**Requirements:** Node.js 18+, Godot 4, and an MCP host (Grok Build, Claude Desktop, etc.).
+
+```bash
+npm install -g godot-mcp
+godot-mcp
+# Launcher prints status on stderr, then runs the MCP server on stdio.
+```
+
+### Register with Grok
+
+```bash
+grok mcp add godot-mcp -- godot-mcp
+grok mcp doctor godot-mcp
+```
+
+Team / game repo (commit shared config):
+
+```bash
+grok mcp add --scope project godot-mcp -- godot-mcp
+```
+
+In the Grok TUI: `/mcps` or `Ctrl+L` → enable **godot-mcp**.
+
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "godot-mcp": {
+      "command": "godot-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+**Windows PATH:** After global install, reopen the terminal (or refresh PATH). Prefer the bare command `godot-mcp` — Grok resolves npm’s `.cmd` shim on Windows in most setups. If `grok` itself is missing, add `%USERPROFILE%\.grok\bin` to PATH for that shell.
+
+---
+
+## First run (zero-footprint)
+
+1. Create a **new Godot 4 2D** project (or use a disposable copy).
+2. Open a **fresh** agent chat with `godot-mcp` enabled.
+3. Paste the prompt from [`docs/friend-starter-prompt.md`](docs/friend-starter-prompt.md) (set your real project path).
+4. When the agent injects the bridge, **open the project in Godot and press Play (F5)**.
+5. In the **Output** panel, confirm:
+
+   ```text
+   [MCPBridge] Zero-footprint bridge active on 127.0.0.1:4243
+   ```
+
+6. Let the agent call `get_tree`, `create_simple_player`, etc.
+
+If tools fail after a new chat or rebuild: ask the agent to **re-run inject** (injection state is per MCP process). The server still auto-detects port **4243** if the bridge is already running.
+
+Full walkthrough: [`docs/getting-started-for-beginners.md`](docs/getting-started-for-beginners.md).
+
+---
+
+## Persistent mode (optional)
+
+1. Copy `addons/godot_mcp_runtime/` into your Godot project.
+2. Project → Project Settings → Plugins → enable **Godot MCP Runtime**.
+3. Press Play — tools talk to **4242**.
+
+---
+
+## Design goals
+
+- **Human does almost no scripting** for the first controllable character.
+- **Clean projects stay clean** unless you choose to save/bake nodes into `.tscn` files.
+- **Public package is general Godot only** — no private game-specific tools or branding.
+
+See [`MVP.md`](MVP.md) for scope and [`RELEASE.md`](RELEASE.md) for release checks.
+
+---
+
+## Project layout
+
+```text
+bin/godot-mcp.js          # User-facing launcher
+src/index.ts               # Public MCP server (general tools)
+src/bridge/                # Zero-footprint inject + runtime port selection
+addons/godot_mcp_runtime/ # Persistent plugin + mcp_bridge.gd source
+docs/                      # Beginner guide + friend starter prompt
+```
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/quinnquad/godot-mcp.git
+cd godot-mcp
+npm install
+npm run build
+npm test                  # JOS-17 style port selection tests
+node build/index.js       # Public surface on stdio
+```
+
+---
+
+## License
+
+MIT — see repository license file if present; otherwise MIT as declared in `package.json`.
+
+## Contributing
+
+Improvements to general tools, zero-footprint reliability, docs, and the launcher are welcome via pull request. Keep the public surface free of private game IP and personal machine paths.

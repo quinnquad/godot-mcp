@@ -35,7 +35,8 @@ We are using a special "zero-footprint" Godot MCP setup. This means you can temp
   - Use input simulation when we want to test player controls.
   - Inspect the scene tree, properties, and UI whenever you're unsure about the current state.
 - Always work in this clean test project (never my "real" projects until we're confident).
-- When you want to connect to my running game, tell me exactly what to do: run the inject tool if needed, then open the project in Godot and press Play (F5 or the Play button). The bridge only listens while the game is actually running. Watch the Godot Output panel for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4242" (or persistent on 4242). If missing, tools fail with connect errors. If tools fail after first Play, re-run the inject (per-process state).
+- When you want to connect to my running game, tell me exactly what to do: run inject_zero_footprint_bridge with my project path if needed, then open the project in Godot and press Play (F5). The bridge only listens while the game is running. Watch Output for "[MCPBridge] Zero-footprint bridge active on 127.0.0.1:4243". Persistent plugin mode uses port 4242. Live tools auto-detect 4242/4243. If tools fail after a fresh chat, re-run inject (per-process state).
+- If you or I need to check the MCP server status: ask me to run `grok mcp doctor godot-mcp` or open `/mcps` in the Grok TUI.
 - When we're done experimenting for the day, remind me to clean up the temporary bridge so my project stays clean.
 
 ### Our First Project
