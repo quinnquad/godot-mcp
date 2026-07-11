@@ -21,7 +21,7 @@ import {
 const server = new Server(
   {
     name: 'godot-mcp',
-    version: '0.1.4',
+    version: '0.1.5',
   },
   {
     capabilities: {
@@ -96,7 +96,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return {
       content: [{
         type: 'text',
-        text: 'Godot MCP 0.1.4 | Public general surface | Ports 4242/4243 auto-detect | Creature Quest example | JOS-15 non-blocking hold_ms | list_children shallow discovery | Tested Godot 4.6 / 4.7 / 4.8-dev1',
+        text: 'Godot MCP 0.1.5 | Public general surface | Ports 4242/4243 auto-detect | JOS-18 bounded get_tree | JOS-15 hold_ms | list_children | Creature Quest example | Tested Godot 4.6 / 4.7 / 4.8-dev1',
       }],
     };
   }

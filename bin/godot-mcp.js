@@ -14,7 +14,7 @@ const root = path.resolve(__dirname, '..');
 const buildEntry = path.join(root, 'build', 'index.js');
 
 function printStatus() {
-  console.error('=== godot-mcp v0.1.4 ===');
+  console.error('=== godot-mcp v0.1.5 ===');
   console.error('Live Godot control for AI agents (Grok, Claude, and other MCP hosts).');
   console.error('Tested with Godot 4.6 · 4.7 · 4.8-dev1 (mono smokes).');
   console.error('Example: examples/creature_quest_slice (Godot 4.7).');
@@ -27,6 +27,7 @@ function printStatus() {
   console.error('Agent tips');
   console.error('  - Live tools only work while the game is in Play with the bridge log visible.');
   console.error('  - Prefer list_children (shallow) over get_tree on large scenes.');
+  console.error('  - get_tree is bounded by default (max_depth=4, max_nodes=150, skips @Type@N); see truncated metadata.');
   console.error('  - Sustained move: simulate_input_batch with hold_ms (physics keeps running).');
   console.error('');
   console.error('Zero-footprint (recommended for clean projects)');
@@ -42,7 +43,7 @@ function printStatus() {
   console.error('Install (this project only — not bare registry name godot-mcp):');
   console.error('  git clone https://github.com/quinnquad/godot-mcp.git && cd godot-mcp');
   console.error('  npm install && npm run build && npm install -g .');
-  console.error('  # or: npm install -g ./godot-mcp-0.1.4.tgz  (from GitHub Releases)');
+  console.error('  # or: npm install -g ./godot-mcp-0.1.5.tgz  (from GitHub Releases)');
   console.error('');
   console.error('Register with Grok (after the install above):');
   console.error('  grok mcp add godot-mcp -- godot-mcp');

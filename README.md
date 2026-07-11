@@ -88,7 +88,7 @@ godot-mcp
 2. Install it:
 
 ```bash
-npm install -g ./godot-mcp-0.1.4.tgz
+npm install -g ./godot-mcp-0.1.5.tgz
 godot-mcp
 ```
 

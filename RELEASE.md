@@ -1,12 +1,15 @@
 # godot-mcp Release Process (public MVP)
 
-Current public version: **0.1.4** — Creature Quest example slice (Godot 4.7) + packaging.
+Current public version: **0.1.5** — JOS-18 bounded `get_tree` (safe defaults on large scenes).
 
-## 0.1.4 release notes
+## 0.1.5 release notes
 
-- **Example project:** `examples/creature_quest_slice` — Godot **4.7** Pokémon-style vertical slice (original creatures only): top-down overworld, tall-grass encounter, turn-based 1v1 battle with type effectiveness. Zero-footprint MCP usage documented; no permanent bridge in the committed project.
-- **Packaging:** npm package `files` includes the example so GitHub Release tarballs ship a playable demo.
-- **Docs:** Root README points at the example; install still clone/tarball-only (not bare registry `godot-mcp`).
+- **JOS-18:** Default `get_tree` is bounded (`max_depth=4`, `max_nodes=150`, skip Godot auto-names `@Sprite2D@N`). Response includes `truncated` / `node_count` metadata. Optional `include_anonymous`, higher depth/nodes when needed.
+- **Surfaces:** pure util + tests; both GDScript bridges (`mcp_bridge.gd`, `runtime_server.gd`); MCP tool schema updated.
+- **Live verified** on Elderglow farm slice (~thousands of decor/trees): default dump ~38ms / ~5KB instead of multi‑MB timeouts.
+- Prefer `list_children` for shallow discovery; `get_tree` is now safe for first-contact.
+
+Prior **0.1.4**: Creature Quest example slice (Godot 4.7) + packaging.
 
 Prior **0.1.3**: JOS-15 non-blocking `hold_ms`, hardened `list_children`, Godot 4.6 / 4.7 / 4.8-dev1 tested notes.
 

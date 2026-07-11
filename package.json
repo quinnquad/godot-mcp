@@ -1,6 +1,6 @@
 {
   "name": "godot-mcp",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Godot MCP server — zero-footprint + general tools so AI agents can control a running Godot game without editing your scripts.",
   "main": "build/index.js",
   "bin": {
