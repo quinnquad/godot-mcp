@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
-    "test": "npm run build && node --test tests/runtime_port.test.js tests/simulate_steps.test.js tests/list_children.test.js",
+    "test": "npm run build && node --test tests/runtime_port.test.js tests/simulate_steps.test.js tests/list_children.test.js tests/dump_tree.test.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -33,6 +33,7 @@
     "build/bridge/runtime-port.js",
     "build/bridge/simulate-steps.js",
     "build/bridge/list-children-util.js",
+    "build/bridge/dump-tree-util.js",
     "build/tools/general/",
     "bin/godot-mcp.js",
     "addons/godot_mcp_runtime/",

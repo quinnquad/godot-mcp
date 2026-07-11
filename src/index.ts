@@ -104,7 +104,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const targetPort = await getTargetRuntimePort();
 
   if (name === 'get_tree') {
-    const resp = await sendRuntimeCmd({ cmd: 'get_tree', root: (args && args.root) || '/root' }, targetPort);
+    const resp = await sendRuntimeCmd(
+      {
+        cmd: 'get_tree',
+        root: (args && args.root) || '/root',
+        max_depth: args && args.max_depth !== undefined ? args.max_depth : undefined,
+        max_nodes: args && args.max_nodes !== undefined ? args.max_nodes : undefined,
+        include_anonymous: args && args.include_anonymous !== undefined ? args.include_anonymous : undefined,
+      },
+      targetPort
+    );
     return { content: [{ type: 'text', text: JSON.stringify(resp, null, 2) }] };
   }
   if (name === 'set_property') {

@@ -4,7 +4,23 @@
 
 export const generalTools = [
   { name: "get_project_info", description: "Get basic project info", inputSchema: { type: "object", properties: {} } },
-  { name: "get_tree", description: "Live: dump scene tree from running game (requires autoload on 4242)", inputSchema: { type: "object", properties: { root: { type: "string" } } } },
+  {
+    name: "get_tree",
+    description:
+      "Live: bounded scene-tree dump (requires Play + bridge 4242/4243). Defaults: max_depth=4, max_nodes=150, skips Godot auto-names (@Sprite2D@N). Prefer list_children for discovery on large scenes. Response includes truncated/node_count metadata when the walk stops early.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        root: { type: "string", description: "Root path (default /root)" },
+        max_depth: { type: "number", description: "Max depth from root (default 4). 0 = root only." },
+        max_nodes: { type: "number", description: "Hard cap on nodes returned (default 150)." },
+        include_anonymous: {
+          type: "boolean",
+          description: "Include Godot-generated names like @Sprite2D@1 (default false).",
+        },
+      },
+    },
+  },
   { name: "set_property", description: "Live: set node property in running game", inputSchema: { type: "object", properties: { node_path: { type: "string" }, property: { type: "string" }, value: {} } } },
   { name: "call_method", description: "Live: call method on node in running game", inputSchema: { type: "object", properties: { node_path: { type: "string" }, method: { type: "string" }, args: { type: "array" } } } },
   { name: "get_node_signals", description: "2d power: list connected signals on node (from advanced forks)", inputSchema: { type: "object", properties: { node_path: { type: "string" } } } },

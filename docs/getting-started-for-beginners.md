@@ -6,7 +6,7 @@ This guide is for someone who has **never made a game before** and wants to use 
 
 **Important:** Live tools only work while your game is **in Play** and the Output panel shows the MCP bridge line (4243 for zero-footprint). If tools say they cannot connect, press Play again.
 
-**Discover the scene** with `list_children` on `/root` or `/root/Main` (lightweight). Prefer that over dumping the entire tree with `get_tree` on big projects.
+**Discover the scene** with `list_children` on `/root` or `/root/Main` (lightweight). Prefer that over `get_tree` on big projects. If you use `get_tree`, defaults are bounded (`max_depth=4`, `max_nodes=150`, skips auto-named `@Sprite2D@N` nodes) and responses include `truncated` when the dump stops early.
 
 **Make a character walk** (not just twitch) using a hold:
 

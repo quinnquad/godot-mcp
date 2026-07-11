@@ -172,7 +172,14 @@ func _handle_cmd(cmd: Dictionary) -> Dictionary:
 			var root_path := str(cmd.get("root", "/root"))
 			var root := get_tree().get_root().get_node_or_null(root_path)
 			if root:
-				return {"status": "ok", "data": _dump_tree(root)}
+				var dump_opts := {
+					"max_depth": cmd.get("max_depth", 4),
+					"max_nodes": cmd.get("max_nodes", 150),
+					"include_anonymous": cmd.get("include_anonymous", false),
+				}
+				if cmd.has("skip_anonymous"):
+					dump_opts["skip_anonymous"] = cmd.get("skip_anonymous")
+				return _dump_tree_response(root, dump_opts)
 			return {"status": "error", "message": "root not found"}
 		"set_property":
 			var node_path := str(cmd.get("node_path", ""))
@@ -715,16 +722,71 @@ func _collect_children_list(node: Node, out: Array, depth: int, max_depth: int, 
 			_collect_children_list(child, out, depth + 1, max_depth, limit)
 
 
-func _dump_tree(node: Node) -> Dictionary:
+# JOS-18: bounded tree dump (defaults match dump-tree-util.ts)
+func _is_anonymous_node_name(n: String) -> bool:
+	var re := RegEx.new()
+	re.compile("^@.+@\\d+$")
+	return re.search(n) != null
+
+
+func _dump_tree_state_init(opts: Dictionary) -> Dictionary:
+	var skip_anon := true
+	if bool(opts.get("include_anonymous", false)):
+		skip_anon = false
+	if opts.has("skip_anonymous"):
+		skip_anon = bool(opts.get("skip_anonymous"))
+	return {
+		"count": 0,
+		"truncated": false,
+		"max_depth": maxi(0, int(opts.get("max_depth", 4))),
+		"max_nodes": maxi(1, int(opts.get("max_nodes", 150))),
+		"skip_anonymous": skip_anon,
+	}
+
+
+func _dump_tree_walk(node: Node, depth: int, state: Dictionary) -> Dictionary:
+	state["count"] = int(state["count"]) + 1
 	var d := {
-		"name": node.name,
-		"path": node.get_path(),
+		"name": str(node.name),
+		"path": str(node.get_path()),
 		"type": node.get_class(),
 		"children": []
 	}
+	var max_depth: int = int(state["max_depth"])
+	var max_nodes: int = int(state["max_nodes"])
+	if depth >= max_depth:
+		if node.get_child_count() > 0:
+			state["truncated"] = true
+		return d
 	for child in node.get_children():
-		d.children.append(_dump_tree(child))
+		if int(state["count"]) >= max_nodes:
+			state["truncated"] = true
+			break
+		var cname := str(child.name)
+		if bool(state["skip_anonymous"]) and _is_anonymous_node_name(cname):
+			continue
+		d.children.append(_dump_tree_walk(child, depth + 1, state))
 	return d
+
+
+func _dump_tree(node: Node, opts: Dictionary = {}) -> Dictionary:
+	## Returns tree dict only (for get_ui_tree). Always applies finite defaults.
+	var state := _dump_tree_state_init(opts)
+	return _dump_tree_walk(node, 0, state)
+
+
+func _dump_tree_response(node: Node, opts: Dictionary = {}) -> Dictionary:
+	var state := _dump_tree_state_init(opts)
+	var data := _dump_tree_walk(node, 0, state)
+	return {
+		"status": "ok",
+		"data": data,
+		"truncated": bool(state["truncated"]),
+		"max_depth": int(state["max_depth"]),
+		"max_nodes": int(state["max_nodes"]),
+		"node_count": int(state["count"]),
+		"skip_anonymous": bool(state["skip_anonymous"]),
+	}
 
 
 func _find_node_by_name_recursive(node: Node, target: String) -> Node:
