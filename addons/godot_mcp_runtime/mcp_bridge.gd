@@ -18,6 +18,7 @@ var tcp_server := TCPServer.new()
 var peers: Array[StreamPeerTCP] = []
 var peer_buffers := {}
 const PORT := 4243  # distinct from persistent 4242
+var _listen_enabled: bool = false
 
 # JOS-15: non-blocking simulate queue — holds leave Input pressed while physics runs
 var _sim_queue: Array = []
@@ -35,6 +36,7 @@ func _ready() -> void:
 	if err != OK:
 		push_error("[MCPBridge] Failed to listen on port %d" % PORT)
 	else:
+		_listen_enabled = true
 		print("[MCPBridge] Zero-footprint bridge active on 127.0.0.1:%d (send {\"cmd\":\"shutdown\"} to detach + cleanup)" % PORT)
 
 
@@ -49,6 +51,8 @@ func _is_headless_runtime() -> bool:
 	return false
 
 func _process(_delta: float) -> void:
+	if not _listen_enabled:
+		return
 	if tcp_server.is_connection_available():
 		var peer := tcp_server.take_connection()
 		peers.append(peer)
