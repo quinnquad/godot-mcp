@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
-    "test": "npm run build && node --test tests/runtime_port.test.js tests/simulate_steps.test.js tests/list_children.test.js tests/dump_tree.test.js",
+    "test": "npm run build && node --test tests/runtime_port.test.js tests/simulate_steps.test.js tests/list_children.test.js tests/dump_tree.test.js tests/zero_footprint_domain.test.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {

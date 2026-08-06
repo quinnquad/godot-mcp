@@ -27,11 +27,26 @@ var _sim_processed: int = 0
 var _sim_busy: bool = false
 
 func _ready() -> void:
+	# JOS-52: headless tests must not fight a live game for the port
+	if _is_headless_runtime():
+		print("[MCPBridge] Headless run — TCP listen skipped (JOS-52)")
+		return
 	var err := tcp_server.listen(PORT, "127.0.0.1")
 	if err != OK:
 		push_error("[MCPBridge] Failed to listen on port %d" % PORT)
 	else:
 		print("[MCPBridge] Zero-footprint bridge active on 127.0.0.1:%d (send {\"cmd\":\"shutdown\"} to detach + cleanup)" % PORT)
+
+
+func _is_headless_runtime() -> bool:
+	if OS.has_feature("headless"):
+		return true
+	if str(OS.get_environment("MCP_BRIDGE_SKIP")).strip_edges() in ["1", "true", "yes"]:
+		return true
+	# DisplayServer "headless" when no window (Godot --headless)
+	if DisplayServer.get_name() == "headless":
+		return true
+	return false
 
 func _process(_delta: float) -> void:
 	if tcp_server.is_connection_available():

@@ -42,21 +42,65 @@ export const zeroFootprintToolNames = [
   'list_zero_footprint_injections',
 ];
 
+/**
+ * True if project already ships a domain-aware bridge (e.g. Elderglow).
+ * Overwriting those files with the public general bridge drops farm_plot_state /
+ * creature_inspect / etc. (JOS-53).
+ */
+export function isDomainAwareBridge(filePath: string): boolean {
+  if (!fs.existsSync(filePath)) return false;
+  try {
+    const src = fs.readFileSync(filePath, 'utf8');
+    return (
+      src.includes('ELDERGLOW_DOMAIN_CMDS') ||
+      src.includes('ElderglowMcpHandlers') ||
+      /DOMAIN_CMDS\s*:=/.test(src)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function handleZeroFootprintTool(name: string, args: any) {
   if (name === 'inject_zero_footprint_bridge') {
     const project_path = (args && args.project_path) || '';
     const port = (args && args.port) || 4243;
+    const force = !!(args && args.force);
     if (!project_path) return { content: [{ type: 'text', text: 'ERROR: project_path required' }], isError: true };
     const bridgeSource = path.resolve(__dirname, '..', '..', 'addons', 'godot_mcp_runtime', 'mcp_bridge.gd');
     if (!fs.existsSync(bridgeSource)) return { content: [{ type: 'text', text: 'ERROR: mcp_bridge.gd source missing' }], isError: true };
     const targetDir = path.join(project_path, 'addons', 'godot_mcp_bridge');
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
     const targetBridge = path.join(targetDir, 'mcp_bridge.gd');
-    fs.copyFileSync(bridgeSource, targetBridge);
+    // JOS-53: never clobber a project domain bridge (Elderglow farm cmds) unless force=true
+    const preservedDomain = !force && isDomainAwareBridge(targetBridge);
+    if (!preservedDomain) {
+      fs.copyFileSync(bridgeSource, targetBridge);
+    }
     const pg = path.join(project_path, 'project.godot');
     const bak = injectMCPBridgeAutoload(pg);
-    injectedBridges.set(project_path, { bridgeScriptPath: targetBridge, autoloadBackup: bak, port });
-    return { content: [{ type: 'text', text: JSON.stringify({ status: 'ok', injected: true, port, project: project_path, note: 'Zero-footprint bridge injected (clean test project). Cleanup after. Future-powers ready.' }) }] };
+    injectedBridges.set(project_path, {
+      bridgeScriptPath: targetBridge,
+      autoloadBackup: bak,
+      port,
+      preservedDomain,
+    });
+    const note = preservedDomain
+      ? 'Preserved existing domain-aware mcp_bridge.gd (JOS-53); only ensured MCPBridge autoload. Play the game — do not expect public-only ZF overwrite.'
+      : 'Zero-footprint general bridge injected (clean test project). Cleanup after.';
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          status: 'ok',
+          injected: true,
+          port,
+          project: project_path,
+          preserved_domain_bridge: preservedDomain,
+          note,
+        }),
+      }],
+    };
   }
   if (name === 'cleanup_zero_footprint_bridge') {
     const project_path = (args && args.project_path) || '';
@@ -64,11 +108,23 @@ export function handleZeroFootprintTool(name: string, args: any) {
     const info = injectedBridges.get(project_path);
     const pg = path.join(project_path, 'project.godot');
     removeMCPBridgeAutoload(pg, info.autoloadBackup);
-    if (fs.existsSync(info.bridgeScriptPath)) fs.unlinkSync(info.bridgeScriptPath);
-    const tdir = path.dirname(info.bridgeScriptPath);
-    if (fs.existsSync(tdir) && fs.readdirSync(tdir).length === 0) fs.rmdirSync(tdir);
+    // Do not delete a pre-existing domain bridge that inject only autoload-registered (JOS-53)
+    if (!info.preservedDomain && fs.existsSync(info.bridgeScriptPath)) {
+      fs.unlinkSync(info.bridgeScriptPath);
+      const tdir = path.dirname(info.bridgeScriptPath);
+      if (fs.existsSync(tdir) && fs.readdirSync(tdir).length === 0) fs.rmdirSync(tdir);
+    }
     injectedBridges.delete(project_path);
-    return { content: [{ type: 'text', text: JSON.stringify({ status: 'ok', cleaned: project_path }) }] };
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          status: 'ok',
+          cleaned: project_path,
+          preserved_domain_bridge: !!info.preservedDomain,
+        }),
+      }],
+    };
   }
   if (name === 'list_zero_footprint_injections') {
     return { content: [{ type: 'text', text: JSON.stringify({ injected: Array.from(injectedBridges.keys()) }) }] };
